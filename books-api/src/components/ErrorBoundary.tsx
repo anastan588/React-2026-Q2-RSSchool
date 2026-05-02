@@ -23,20 +23,23 @@ class ErrorBoundary extends Component<Props, State> {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
-  handleReload = (): void => {
+  handleReset = (): void => {
+    this.setState({ hasError: false });
     window.location.reload();
   };
 
   render() {
-    const { hasError } = this.state;
     const { children } = this.props;
+    const { hasError } = this.state;
 
     if (hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center bg-accent-soft rounded-3xl border border-primary/10 m-4">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Oops! Something went wrong.</h2>
-          <p className="text-muted mb-8 max-w-md">The application encountered an unexpected error.</p>
-          <Button onClick={this.handleReload}>Reload Application</Button>
+        <div className="flex flex-col items-center justify-center p-12 bg-red-50 border border-red-100 rounded-3xl m-4 text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+          <p className="text-red-500 mb-8 max-w-md">
+            The application encountered a critical error. Please try reloading the page.
+          </p>
+          <Button onClick={this.handleReset}>Reload App</Button>
         </div>
       );
     }

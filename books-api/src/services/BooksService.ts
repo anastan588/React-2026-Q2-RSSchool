@@ -32,7 +32,15 @@ class BookService {
 
     const response = await fetch(`${this.BASE_URL}/search.json?${params}`, { signal });
 
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) {
+      if (response.status >= 500) {
+        throw new Error('Our library server is currently down. Please try again later.');
+      }
+      if (response.status === 429) {
+        throw new Error('Too many requests. Please slow down and try again in a minute.');
+      }
+      throw new Error('We could not find the books you are looking for due to a client error.');
+    }
 
     const data = await response.json();
 
