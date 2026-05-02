@@ -1,6 +1,5 @@
 @import 'tailwindcss';
 
-/* 1. Настройка переменных */
 :root {
   --bg: #ffffff;
   --fg: #1a1a1c;
@@ -25,12 +24,10 @@
   }
 }
 
-/* 2. Регистрация темы в Tailwind v4 */
 @theme {
   --color-background: var(--bg);
   --color-foreground: var(--fg);
   --color-primary: var(--accent);
-  /* Регистрация accent-soft исправляет вашу ошибку */
   --color-accent-soft: var(--accent-soft);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted);
@@ -67,17 +64,14 @@
          transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]
          border border-white/20 overflow-hidden;
 
-    /* 1. Насыщенный градиент вместо плоского цвета */
     background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
 
-    /* 2. Улучшенная тень с использованием переменной акцента */
     box-shadow:
       0 4px 15px -1px rgba(99, 102, 241, 0.4),
       inset 0 1px 1px rgba(255, 255, 255, 0.3);
 
     &:hover {
       @apply -translate-y-1;
-      /* 3. Эффект "заряженного" цвета при наведении */
       background: linear-gradient(135deg, #818cf8 0%, var(--accent) 100%);
       box-shadow:
         0 15px 30px -5px rgba(99, 102, 241, 0.5),
@@ -87,18 +81,16 @@
 
     &:active {
       @apply translate-y-0 scale-95;
-      /* 4. Затемнение при нажатии для имитации физического контакта */
       filter: brightness(0.9);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     &:disabled {
       @apply bg-muted/20 text-muted-foreground border-transparent shadow-none cursor-not-allowed;
-      background: var(--muted); /* Отключаем градиент для disabled */
+      background: var(--muted);
       opacity: 0.5;
     }
 
-    /* Глянцевый блик остается для объема */
     &::before {
       content: '';
       @apply absolute inset-0 bg-linear-to-b from-white/25 to-transparent pointer-events-none;
@@ -109,11 +101,9 @@
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12;
   }
 
-  /* Исправление: убираем @apply для group-hover, используем вложенность */
   .book-item {
     @apply flex flex-col gap-3 cursor-pointer;
 
-    /* Вместо group-hover:-translate-y-2 в @apply пишем так: */
     &:hover .book-cover-wrapper {
       @apply -translate-y-2 shadow-2xl;
     }
@@ -145,7 +135,6 @@
   }
 
   .category-tag {
-    /* Теперь bg-accent-soft работает корректно */
     @apply px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold 
            bg-accent-soft text-primary rounded-md w-fit;
   }
