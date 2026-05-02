@@ -19,14 +19,13 @@ export default defineConfig([
       },
     },
     plugins: {
-      react: react,
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh,
       'simple-import-sort': simpleSort,
     },
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
       react.configs.flat.recommended,
       react.configs.flat['jsx-runtime'],
       eslintPluginPrettierRecommended,
