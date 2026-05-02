@@ -1,104 +1,79 @@
 import './App.css';
 
-import { useState } from 'react';
+import { Component } from 'react';
 
-import heroImg from './assets/hero.png';
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
+import BookList from './components/BookList';
+import SearchField from './components/SearchField';
+import type { Book } from './services/BooksService';
+import BookService from './services/BooksService';
 
-const App = () => {
-  const [count, setCount] = useState(0);
+interface AppState {
+  query: string;
+  books: Book[];
+  isLoading: boolean;
+  error: string | null;
+}
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img alt="" className="base" height="179" src={heroImg} width="170" />
-          <img alt="React logo" className="framework" src={reactLogo} />
-          <img alt="Vite logo" className="vite" src={viteLogo} />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button className="counter" type="button" onClick={() => setCount((count) => count + 1)}>
-          Count is {count}
-        </button>
-      </section>
+class App extends Component<Record<string, never>, AppState> {
+  private abortController: AbortController | null = null;
 
-      <div className="ticks" />
+  state: AppState = {
+    query: '',
+    books: [],
+    isLoading: false,
+    error: null,
+  };
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#documentation-icon" />
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="logo" src={viteLogo} />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="button-icon" src={reactLogo} />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#social-icon" />
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#github-icon" />
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#discord-icon" />
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#x-icon" />
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#bluesky-icon" />
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  handleSearch = (value: string): void => {
+    // Destructuring state is not needed here as we use the argument 'value'
+    this.setState({ query: value }, () => {
+      const { query } = this.state;
+      if (query.trim().length >= 3) {
+        this.loadBooks(query);
+      }
+    });
+  };
 
-      <div className="ticks" />
-      <section id="spacer" />
-    </>
-  );
-};
+  private async loadBooks(query: string): Promise<void> {
+    if (this.abortController) this.abortController.abort();
+    this.abortController = new AbortController();
+
+    this.setState({ isLoading: true, error: null });
+
+    try {
+      const books = await BookService.searchBooks(query, this.abortController.signal);
+      this.setState({ books, isLoading: false });
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+
+      const error = err instanceof Error ? err.message : 'An unknown error occurred';
+      this.setState({ error, isLoading: false });
+    }
+  }
+
+  render() {
+    const { books, isLoading, error } = this.state;
+
+    return (
+      <main className="app-container">
+        {/* We don't need to pass 'query' back if SearchField manages its own local state */}
+        <SearchField onSearch={this.handleSearch} />
+
+        {error ? (
+          <div className="bg-red-50 text-red-500 p-4 rounded-xl text-center mb-6 border border-red-100">{error}</div>
+        ) : null}
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
+            <p className="text-muted text-lg">Searching for books in Open Library...</p>
+          </div>
+        ) : (
+          <BookList books={books} />
+        )}
+      </main>
+    );
+  }
+}
 
 export default App;

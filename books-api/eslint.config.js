@@ -43,9 +43,10 @@ export default defineConfig([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      'react/prefer-stateless-function': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      'react/prefer-stateless-function': 'error',
+      // 'react/prefer-stateless-function': 'error',
       'react/button-has-type': 'error',
       'react/no-unused-prop-types': 'error',
       'react/jsx-pascal-case': 'error',

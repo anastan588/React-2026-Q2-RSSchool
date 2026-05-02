@@ -1,111 +1,105 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
+/* 1. Настройка переменных */
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --bg: #ffffff;
+  --fg: #1a1a1c;
+  --accent: #6366f1;
+  --accent-soft: rgba(99, 102, 241, 0.1);
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --card-bg: #f8fafc;
+  --radius-book: 2px 12px 12px 2px;
+  --shadow-book: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    --bg: #0f172a;
+    --fg: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #1e293b;
+    --card-bg: #1e293b;
+    --accent: #818cf8;
+    --accent-soft: rgba(129, 140, 248, 0.15);
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+/* 2. Регистрация темы в Tailwind v4 */
+@theme {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--accent);
+  /* Регистрация accent-soft исправляет вашу ошибку */
+  --color-accent-soft: var(--accent-soft); 
+  --color-muted: var(--muted);
+  --color-border-custom: var(--border);
+  --color-card: var(--card-bg);
+  --shadow-book: var(--shadow-book);
 }
 
-body {
-  margin: 0;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+@layer base {
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+    font-family: system-ui, -apple-system, sans-serif;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+@layer components {
+  .app-container {
+    @apply max-w-6xl mx-auto px-4 py-8;
+  }
+
+  .search-bar {
+    @apply w-full sticky top-4 z-10 px-6 py-4 mb-12
+           bg-background/80 backdrop-blur-md border border-border-custom
+           rounded-2xl shadow-sm outline-none transition-all 
+           focus:ring-2 focus:ring-primary/50 placeholder:text-muted;
+  }
+
+  .book-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12;
+  }
+
+  /* Исправление: убираем @apply для group-hover, используем вложенность */
+  .book-item {
+    @apply flex flex-col gap-3 cursor-pointer;
+    
+    /* Вместо group-hover:-translate-y-2 в @apply пишем так: */
+    &:hover .book-cover-wrapper {
+      @apply -translate-y-2 shadow-2xl;
+    }
+    
+    &:hover .book-title {
+      @apply text-primary;
+    }
+  }
+
+  .book-cover-wrapper {
+    @apply relative aspect-[2/3] overflow-hidden rounded-[var(--radius-book)]
+           shadow-book transition-transform duration-500 ease-out;
+  }
+
+  .book-cover-img {
+    @apply w-full h-full object-contain;
+  }
+
+  .book-spine {
+    @apply absolute inset-y-0 left-0 w-2 bg-black/10 backdrop-blur-[1px] border-r border-white/10;
+  }
+
+  .book-title {
+    @apply text-lg font-medium leading-tight transition-colors line-clamp-2;
+  }
+
+  .book-author {
+    @apply text-sm text-muted;
+  }
+
+  .category-tag {
+    /* Теперь bg-accent-soft работает корректно */
+    @apply px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold 
+           bg-accent-soft text-primary rounded-md w-fit;
   }
 }
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
