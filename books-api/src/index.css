@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* 1. Настройка переменных */
 :root {
@@ -31,8 +31,9 @@
   --color-foreground: var(--fg);
   --color-primary: var(--accent);
   /* Регистрация accent-soft исправляет вашу ошибку */
-  --color-accent-soft: var(--accent-soft); 
+  --color-accent-soft: var(--accent-soft);
   --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted);
   --color-border-custom: var(--border);
   --color-card: var(--card-bg);
   --shadow-book: var(--shadow-book);
@@ -41,7 +42,10 @@
 @layer base {
   body {
     @apply bg-background text-foreground transition-colors duration-300;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
 }
 
@@ -51,10 +55,54 @@
   }
 
   .search-bar {
-    @apply w-full sticky top-4 z-10 px-6 py-4 mb-12
-           bg-background/80 backdrop-blur-md border border-border-custom
-           rounded-2xl shadow-sm outline-none transition-all 
-           focus:ring-2 focus:ring-primary/50 placeholder:text-muted;
+    @apply w-full px-6 py-4 bg-card border border-border-custom rounded-2xl
+           shadow-sm transition-all duration-300 outline-none
+           placeholder:text-muted/60
+           focus:border-primary focus:ring-4 focus:ring-primary/10 focus:shadow-md;
+  }
+
+  .btn-primary {
+    cursor: pointer !important;
+    @apply relative px-8 py-4 text-white font-bold rounded-2xl 
+         transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)]
+         border border-white/20 overflow-hidden;
+
+    /* 1. Насыщенный градиент вместо плоского цвета */
+    background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 100%);
+
+    /* 2. Улучшенная тень с использованием переменной акцента */
+    box-shadow:
+      0 4px 15px -1px rgba(99, 102, 241, 0.4),
+      inset 0 1px 1px rgba(255, 255, 255, 0.3);
+
+    &:hover {
+      @apply -translate-y-1;
+      /* 3. Эффект "заряженного" цвета при наведении */
+      background: linear-gradient(135deg, #818cf8 0%, var(--accent) 100%);
+      box-shadow:
+        0 15px 30px -5px rgba(99, 102, 241, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+    }
+
+    &:active {
+      @apply translate-y-0 scale-95;
+      /* 4. Затемнение при нажатии для имитации физического контакта */
+      filter: brightness(0.9);
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    &:disabled {
+      @apply bg-muted/20 text-muted-foreground border-transparent shadow-none cursor-not-allowed;
+      background: var(--muted); /* Отключаем градиент для disabled */
+      opacity: 0.5;
+    }
+
+    /* Глянцевый блик остается для объема */
+    &::before {
+      content: '';
+      @apply absolute inset-0 bg-linear-to-b from-white/25 to-transparent pointer-events-none;
+    }
   }
 
   .book-grid {
@@ -64,19 +112,19 @@
   /* Исправление: убираем @apply для group-hover, используем вложенность */
   .book-item {
     @apply flex flex-col gap-3 cursor-pointer;
-    
+
     /* Вместо group-hover:-translate-y-2 в @apply пишем так: */
     &:hover .book-cover-wrapper {
       @apply -translate-y-2 shadow-2xl;
     }
-    
+
     &:hover .book-title {
       @apply text-primary;
     }
   }
 
   .book-cover-wrapper {
-    @apply relative aspect-[2/3] overflow-hidden rounded-[var(--radius-book)]
+    @apply relative aspect-2/3 overflow-hidden rounded-(--radius-book)
            shadow-book transition-transform duration-500 ease-out;
   }
 
@@ -102,4 +150,3 @@
            bg-accent-soft text-primary rounded-md w-fit;
   }
 }
-

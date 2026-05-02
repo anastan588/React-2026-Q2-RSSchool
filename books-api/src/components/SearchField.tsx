@@ -1,7 +1,11 @@
 import { type ChangeEvent, Component, type FormEvent } from 'react';
 
+import Button from './Button';
+import Input from './Input';
+
 interface SearchFieldProps {
   onSearch: (query: string) => void;
+  initialValue?: string;
 }
 
 interface SearchFieldState {
@@ -10,12 +14,16 @@ interface SearchFieldState {
 }
 
 class SearchField extends Component<SearchFieldProps, SearchFieldState> {
-  state: SearchFieldState = {
-    localQuery: '',
-    showError: false,
-  };
+  constructor(props: SearchFieldProps) {
+    super(props);
+    const { initialValue } = props;
+    this.state = {
+      localQuery: initialValue || '',
+      showError: false,
+    };
+  }
 
-  handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
     const { showError } = this.state;
     const trimmedLen = value.trim().length;
@@ -26,7 +34,7 @@ class SearchField extends Component<SearchFieldProps, SearchFieldState> {
     });
   };
 
-  handleSubmit = (e: FormEvent) => {
+  handleSubmit = (e: FormEvent): void => {
     e.preventDefault();
     const { localQuery } = this.state;
     const { onSearch } = this.props;
@@ -47,22 +55,15 @@ class SearchField extends Component<SearchFieldProps, SearchFieldState> {
       <div className="mb-12">
         <form className="flex gap-2" onSubmit={this.handleSubmit}>
           <div className="relative flex-1">
-            <input
-              className={`search-bar w-full transition-all ${showError ? 'border-red-500 ring-4 ring-red-500/10' : ''}`}
+            <Input
+              className={showError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-border-custom'}
               placeholder="Search by title or author (min 3 chars)..."
               type="text"
               value={localQuery}
               onChange={this.handleInputChange}
             />
           </div>
-          <button
-            className="px-8 py-4 bg-primary text-white font-bold rounded-2xl 
-                       hover:shadow-xl hover:bg-primary/90 transition-all 
-                       active:scale-95 shadow-primary/20 shadow-lg"
-            type="submit"
-          >
-            Search
-          </button>
+          <Button type="submit">Search</Button>
         </form>
 
         {showError ? (

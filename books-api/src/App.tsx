@@ -6,6 +6,7 @@ import BookList from './components/BookList';
 import SearchField from './components/SearchField';
 import type { Book } from './services/BooksService';
 import BookService from './services/BooksService';
+import StorageService from './services/StorageService';
 
 interface AppState {
   query: string;
@@ -18,17 +19,22 @@ class App extends Component<Record<string, never>, AppState> {
   private abortController: AbortController | null = null;
 
   state: AppState = {
-    query: '',
+    query: StorageService.getSearchQuery(),
     books: [],
     isLoading: false,
     error: null,
   };
 
+  componentDidMount(): void {
+    const { query } = this.state;
+    this.loadBooks(query);
+  }
+
   handleSearch = (value: string): void => {
-    // Destructuring state is not needed here as we use the argument 'value'
     this.setState({ query: value }, () => {
       const { query } = this.state;
       if (query.trim().length >= 3) {
+        StorageService.setSearchQuery(query);
         this.loadBooks(query);
       }
     });
@@ -45,19 +51,17 @@ class App extends Component<Record<string, never>, AppState> {
       this.setState({ books, isLoading: false });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return;
-
       const error = err instanceof Error ? err.message : 'An unknown error occurred';
       this.setState({ error, isLoading: false });
     }
   }
 
   render() {
-    const { books, isLoading, error } = this.state;
+    const { query, books, isLoading, error } = this.state;
 
     return (
       <main className="app-container">
-        {/* We don't need to pass 'query' back if SearchField manages its own local state */}
-        <SearchField onSearch={this.handleSearch} />
+        <SearchField initialValue={query} onSearch={this.handleSearch} />
 
         {error ? (
           <div className="bg-red-50 text-red-500 p-4 rounded-xl text-center mb-6 border border-red-100">{error}</div>
@@ -66,7 +70,7 @@ class App extends Component<Record<string, never>, AppState> {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4" />
-            <p className="text-muted text-lg">Searching for books in Open Library...</p>
+            <p className="text-muted text-lg">Searching for &quot;{query}&quot;...</p>
           </div>
         ) : (
           <BookList books={books} />

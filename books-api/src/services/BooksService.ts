@@ -23,9 +23,10 @@ class BookService {
   private static readonly COVERS_BASE_URL = 'https://covers.openlibrary.org/b';
 
   static async searchBooks(query: string, signal?: AbortSignal): Promise<Book[]> {
+    const searchQuery = query.trim() || 'top books';
     const params = new URLSearchParams({
-      q: query,
-      limit: '30',
+      q: searchQuery,
+      limit: '50',
       fields: 'key,title,author_name,cover_i,subject,edition_key',
     });
 
@@ -55,8 +56,6 @@ class BookService {
     if (doc.edition_key?.[0]) {
       return `${this.COVERS_BASE_URL}/olid/${doc.edition_key[0]}-M.jpg?default=false`;
     }
-
-    // 3. Плейсхолдер, если ничего не найдено
     return 'https://placehold.co';
   }
 }
