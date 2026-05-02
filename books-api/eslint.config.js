@@ -13,7 +13,11 @@ export default defineConfig([
 
   {
     files: ['**/*.{ts,tsx}'],
-
+    settings: {
+      react: {
+        version: '19.0',
+      },
+    },
     plugins: {
       react: react,
       'react-hooks': reactHooks,
