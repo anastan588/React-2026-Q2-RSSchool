@@ -7,17 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "format:fix": "prettier --write .",
     "preview": "vite preview",
     "prepare": "cd .. && husky books-api/.husky"
-  },
-  "lint-staged": {
-    "src/**/*.(ts|tsx|js|jsx)": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "src/**/*.(json|css|scss|md)": [
-      "prettier --write"
-    ]
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
