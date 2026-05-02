@@ -1,24 +1,89 @@
-import js from '@eslint/js'
-import globals from 'globals'
-import reactHooks from 'eslint-plugin-react-hooks'
-import reactRefresh from 'eslint-plugin-react-refresh'
-import tseslint from 'typescript-eslint'
-import { defineConfig, globalIgnores } from 'eslint/config'
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
+import js from '@eslint/js';
+import globals from 'globals';
+import react from 'eslint-plugin-react';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import simpleSort from 'eslint-plugin-simple-import-sort';
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'node_modules', 'build']),
+
   {
     files: ['**/*.{ts,tsx}'],
+
+    plugins: {
+      react: react,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+      'simple-import-sort': simpleSort,
+    },
     extends: [
       js.configs.recommended,
-      tseslint.configs.recommended,
-      reactHooks.configs.flat.recommended,
-      reactRefresh.configs.vite,
-      eslintPluginPrettierRecommended
+      ...tseslint.configs.recommended,
+      react.configs.flat.recommended,
+      react.configs.flat['jsx-runtime'],
+      eslintPluginPrettierRecommended,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+      },
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      'react/prefer-stateless-function': 'error',
+      'react/button-has-type': 'error',
+      'react/no-unused-prop-types': 'error',
+      'react/jsx-pascal-case': 'error',
+      'react/jsx-no-script-url': 'error',
+      'react/no-children-prop': 'error',
+      'react/no-danger': 'error',
+      'react/no-danger-with-children': 'error',
+      'react/no-unstable-nested-components': ['error', { allowAsProps: true }],
+      'react/jsx-fragments': 'error',
+      'react/destructuring-assignment': ['error', 'always', { destructureInSignature: 'always' }],
+      'react/jsx-no-leaked-render': ['error', { validStrategies: ['ternary'] }],
+      'react/jsx-max-depth': ['error', { max: 8 }],
+      'react/function-component-definition': ['warn', { namedComponents: 'arrow-function' }],
+      'react/jsx-key': [
+        'error',
+        { checkFragmentShorthand: true, checkKeyMustBeforeSpread: true, warnOnDuplicates: true },
+      ],
+      'react/jsx-no-useless-fragment': 'warn',
+      'react/jsx-curly-brace-presence': ['warn', { props: 'never', children: 'never' }],
+      'react/no-typos': 'warn',
+      'react/display-name': 'warn',
+      'react/self-closing-comp': 'warn',
+      'react/jsx-sort-props': ['warn', { callbacksLast: true, shorthandFirst: true, reservedFirst: true }],
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+
+      // Сортировка импортов
+      'simple-import-sort/imports': [
+        'error',
+        {
+          groups: [
+            ['^\\u0000'], // Side effects
+            ['^react$', '^@?\\w'], 
+            ['^@(/.*|$)'], 
+            ['^\\.\\.(?!/?$)', '^\\.\\./?$'],
+            ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'], 
+            ['^.+\\.module\\.(css|scss)$'], 
+            ['^.+\\.(gif|png|svg|jpg)$'], 
+          ],
+        },
+      ],
+      'simple-import-sort/exports': 'error',
     },
   },
-])
+]);
