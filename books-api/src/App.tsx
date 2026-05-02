@@ -3,6 +3,7 @@ import './App.css';
 import { Component } from 'react';
 
 import BookList from './components/BookList';
+import ErrorButton from './components/ErrorButton';
 import SearchField from './components/SearchField';
 import type { Book } from './services/BooksService';
 import BookService from './services/BooksService';
@@ -75,6 +76,7 @@ class App extends Component<Record<string, never>, AppState> {
         ) : (
           <BookList books={books} />
         )}
+        <ErrorButton />
       </main>
     );
   }
