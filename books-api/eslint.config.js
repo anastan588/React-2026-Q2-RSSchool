@@ -40,6 +40,7 @@ export default defineConfig([
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'error',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
       'react/prefer-stateless-function': 'error',
       'react/button-has-type': 'error',
