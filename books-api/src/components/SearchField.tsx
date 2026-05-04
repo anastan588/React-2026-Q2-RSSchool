@@ -1,17 +1,8 @@
-import { type ChangeEvent, Component, type FormEvent } from 'react';
+import { type ChangeEvent, Component, type SyntheticEvent } from 'react';
 
-import Button from './Button';
-import Input from './Input';
-
-interface SearchFieldProps {
-  onSearch: (query: string) => void;
-  initialValue?: string;
-}
-
-interface SearchFieldState {
-  localQuery: string;
-  showError: boolean;
-}
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import type { SearchFieldProps, SearchFieldState } from '@/types/types';
 
 class SearchField extends Component<SearchFieldProps, SearchFieldState> {
   constructor(props: SearchFieldProps) {
@@ -34,13 +25,13 @@ class SearchField extends Component<SearchFieldProps, SearchFieldState> {
     });
   };
 
-  handleSubmit = (e: FormEvent): void => {
+  handleSubmit = (e: SyntheticEvent): void => {
     e.preventDefault();
     const { localQuery } = this.state;
     const { onSearch } = this.props;
     const trimmedQuery = localQuery.trim();
 
-    if (trimmedQuery.length >= 3) {
+    if (trimmedQuery.length >= 3 || trimmedQuery.length === 0) {
       this.setState({ showError: false });
       onSearch(trimmedQuery);
     } else {
@@ -52,12 +43,12 @@ class SearchField extends Component<SearchFieldProps, SearchFieldState> {
     const { localQuery, showError } = this.state;
 
     return (
-      <div className="mb-12">
+      <>
         <form className="flex gap-2" onSubmit={this.handleSubmit}>
           <div className="relative flex-1">
             <Input
               className={showError ? 'border-red-500 ring-4 ring-red-500/10' : 'border-border-custom'}
-              placeholder="Search by title or author (min 3 chars)..."
+              placeholder="Search by author (min 3 chars)..."
               type="text"
               value={localQuery}
               onChange={this.handleInputChange}
@@ -65,13 +56,12 @@ class SearchField extends Component<SearchFieldProps, SearchFieldState> {
           </div>
           <Button type="submit">Search</Button>
         </form>
-
         {showError ? (
           <p className="text-red-500 text-sm mt-3 ml-4 font-medium animate-in fade-in duration-300">
             ⚠ Please enter at least 3 characters for an accurate search
           </p>
         ) : null}
-      </div>
+      </>
     );
   }
 }

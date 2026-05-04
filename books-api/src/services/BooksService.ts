@@ -1,70 +1,68 @@
-// src/services/BookService.ts
-
-export interface Book {
-  id: string;
-  title: string;
-  author: string;
-  category: string;
-  cover: string;
-  openLibraryUrl: string; // Ссылка на оригинал (courtesy link)
-}
-
-interface OpenLibraryDoc {
-  key: string;
-  title: string;
-  author_name?: string[];
-  subject?: string[];
-  cover_i?: number;
-  edition_key?: string[]; // OLID первого издания
-}
+import type { Book, OpenLibraryDoc } from '@/types/types';
 
 class BookService {
   private static readonly BASE_URL = 'https://openlibrary.org';
   private static readonly COVERS_BASE_URL = 'https://covers.openlibrary.org/b';
 
-  static async searchBooks(query: string, signal?: AbortSignal): Promise<Book[]> {
-    const searchQuery = query.trim() || 'top books';
-    const params = new URLSearchParams({
-      q: searchQuery,
-      limit: '50',
-      fields: 'key,title,author_name,cover_i,subject,edition_key',
-    });
+  static async searchBooks(query: string, options: { page?: number } = {}): Promise<Book[]> {
+    const page = options.page || 1;
+    const sanitizedQuery = query.trim() || 'A';
 
-    const response = await fetch(`${this.BASE_URL}/search.json?${params}`, { signal });
+    const url = new URL(`${this.BASE_URL}/search.json`);
+    url.searchParams.set('author', sanitizedQuery);
+    url.searchParams.set('page', page.toString());
+    url.searchParams.set('limit', '50');
+    url.searchParams.set('fields', 'key,title,author_name,cover_i,subject,edition_key');
 
-    if (!response.ok) {
-      if (response.status >= 500) {
-        throw new Error('Our library server is currently down. Please try again later.');
+    try {
+      const response = await fetch(url.toString());
+
+      if (!response.ok) {
+        this.handleHttpError(response.status);
       }
-      if (response.status === 429) {
-        throw new Error('Too many requests. Please slow down and try again in a minute.');
-      }
-      throw new Error('We could not find the books you are looking for due to a client error.');
+
+      const data = await response.json();
+
+      if (!data.docs) return [];
+
+      return data.docs.map(
+        (doc: OpenLibraryDoc): Book => ({
+          id: doc.key,
+          title: doc.title,
+          author: doc.author_name?.[0] ?? 'Unknown Author',
+          category: doc.subject?.[0] ?? 'General',
+          cover: this.getCoverUrl(doc),
+          openLibraryUrl: `${this.BASE_URL}${doc.key}`,
+        }),
+      );
+    } catch (error) {
+      throw new Error('Failed to fetch books. Please check your internet connection.', { cause: error });
     }
+  }
 
-    const data = await response.json();
-
-    return data.docs.map(
-      (doc: OpenLibraryDoc): Book => ({
-        id: doc.key,
-        title: doc.title,
-        author: doc.author_name?.[0] ?? 'Unknown Author',
-        category: doc.subject?.[0] ?? 'General',
-        cover: this.getCoverUrl(doc),
-        openLibraryUrl: `${this.BASE_URL}${doc.key}`,
-      }),
-    );
+  private static handleHttpError(status: number): void {
+    if (status >= 500) {
+      throw new Error('Our library server is currently down. Please try again later.');
+    }
+    if (status === 429) {
+      throw new Error('Too many requests. Please slow down and try again in a minute.');
+    }
+    if (status === 404) {
+      throw new Error('Search service not found (404). Please contact support.');
+    }
+    throw new Error('We could not find the books you are looking for due to a client error.');
   }
 
   private static getCoverUrl(doc: OpenLibraryDoc): string {
     if (doc.cover_i && doc.cover_i > 0) {
-      return `${this.COVERS_BASE_URL}/id/${doc.cover_i}-M.jpg?default=false`;
+      return `${this.COVERS_BASE_URL}/id/${doc.cover_i}-M.jpg`;
     }
 
     if (doc.edition_key?.[0]) {
-      return `${this.COVERS_BASE_URL}/olid/${doc.edition_key[0]}-M.jpg?default=false`;
+      return `${this.COVERS_BASE_URL}/olid/${doc.edition_key[0]}-M.jpg`;
     }
-    return 'https://placehold.co';
+
+    return './../assets/mock-book.jpg';
   }
 }
 

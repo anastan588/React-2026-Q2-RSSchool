@@ -6,7 +6,8 @@ class StorageService {
   }
 
   static setSearchQuery(query: string): void {
-    localStorage.setItem(this.SEARCH_KEY, query);
+    const trimmedQuery = query.trim();
+    localStorage.setItem(this.SEARCH_KEY, trimmedQuery);
   }
 
   static clearSearch(): void {

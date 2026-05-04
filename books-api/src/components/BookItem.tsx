@@ -1,11 +1,7 @@
 import { Component } from 'react';
 
 import neutralBookImage from '@/assets/mock-book.jpg';
-import type { Book } from '@/services/BooksService';
-
-interface BookItemState {
-  hasError: boolean;
-}
+import type { Book, BookItemState } from '@/types/types';
 
 class BookItem extends Component<{ book: Book }, BookItemState> {
   state: BookItemState = {

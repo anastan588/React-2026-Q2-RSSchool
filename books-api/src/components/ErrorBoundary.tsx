@@ -1,21 +1,14 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo } from 'react';
 
-import Button from './Button';
+import Button from '@/components/Button';
+import type { BoundaryProps, BoundaryState } from '@/types/types';
 
-interface Props {
-  children: ReactNode;
-}
-
-interface State {
-  hasError: boolean;
-}
-
-class ErrorBoundary extends Component<Props, State> {
-  state: State = {
+class ErrorBoundary extends Component<BoundaryProps, BoundaryState> {
+  state: BoundaryState = {
     hasError: false,
   };
 
-  static getDerivedStateFromError(): State {
+  static getDerivedStateFromError(): BoundaryState {
     return { hasError: true };
   }
 

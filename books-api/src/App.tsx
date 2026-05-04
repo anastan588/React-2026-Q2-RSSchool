@@ -2,23 +2,17 @@ import './App.css';
 
 import { Component } from 'react';
 
-import BookList from './components/BookList';
-import Button from './components/Button'; // Assuming you have this reusable component
-import ErrorButton from './components/ErrorButton';
-import SearchField from './components/SearchField';
-import type { Book } from './services/BooksService';
-import BookService from './services/BooksService';
-import StorageService from './services/StorageService';
-
-interface AppState {
-  query: string;
-  books: Book[];
-  isLoading: boolean;
-  error: string | null;
-}
+import BookList from '@/components/BookList';
+import ErrorButton from '@/components/ErrorButton';
+import ErrorMessage from '@/components/ErrorMessage';
+import Loader from '@/components/Loader';
+import SearchField from '@/components/SearchField';
+import BookService from '@/services/BooksService';
+import StorageService from '@/services/StorageService';
+import type { AppState } from '@/types/types';
 
 class App extends Component<Record<string, never>, AppState> {
-  private abortController: AbortController | null = null;
+  private lastAppliedQuery: string = '';
 
   state: AppState = {
     query: StorageService.getSearchQuery(),
@@ -33,28 +27,23 @@ class App extends Component<Record<string, never>, AppState> {
   }
 
   handleSearch = (value: string): void => {
-    this.setState({ query: value }, () => {
-      const { query } = this.state;
-      if (query.trim().length >= 3) {
-        StorageService.setSearchQuery(query);
-        this.loadBooks(query);
+    const trimmed = value.trim();
+    if (trimmed === this.lastAppliedQuery) return;
+    this.setState({ query: trimmed }, () => {
+      if (trimmed.length >= 3 || trimmed.length === 0) {
+        StorageService.setSearchQuery(trimmed);
+        this.loadBooks(trimmed);
       }
     });
   };
 
   private async loadBooks(query: string): Promise<void> {
-    if (this.abortController) this.abortController.abort();
-    this.abortController = new AbortController();
-
     this.setState({ isLoading: true, error: null });
-
+    this.lastAppliedQuery = query;
     try {
-      const books = await BookService.searchBooks(query, this.abortController.signal);
+      const books = await BookService.searchBooks(query, { page: 1 });
       this.setState({ books, isLoading: false });
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-
-      // Feature 8: Human-readable error message
       const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
       this.setState({ error: errorMsg, isLoading: false, books: [] });
     }
@@ -64,33 +53,22 @@ class App extends Component<Record<string, never>, AppState> {
     const { query, books, isLoading, error } = this.state;
 
     return (
-      <main className="app-container">
-        <SearchField initialValue={query} onSearch={this.handleSearch} />
-        {error && !isLoading ? (
-          <div className="bg-red-50 border border-red-200 text-red-600 p-8 rounded-3xl text-center mb-8 animate-in fade-in">
-            <p className="text-xs uppercase tracking-widest font-bold mb-2 opacity-60">Service Alert</p>
-            <p className="mb-6 font-medium">{error}</p>
-            <Button
-              className="!bg-red-600 !shadow-red-600/20 !px-6 !py-2 text-sm"
-              onClick={() => this.loadBooks(query)}
-            >
-              Retry Search
-            </Button>
+      <div className="min-h-screen flex flex-col">
+        <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
+          <div className="max-w-5xl mx-auto">
+            <SearchField initialValue={query} onSearch={this.handleSearch} />
           </div>
-        ) : null}
-
-        {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 animate-pulse text-muted">
-            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin mb-4" />
-            <p className="text-lg">Searching for &quot;{query || 'popular books'}&quot;...</p>
+        </header>
+        <main className="grow bg-white py-12 px-6">
+          <div className="max-w-5xl mx-auto">
+            {error && !isLoading ? <ErrorMessage message={error} onRetry={() => this.loadBooks(query)} /> : null}
+            {isLoading ? <Loader query={query} /> : <BookList books={books} hasError={!!error} />}
           </div>
-        ) : (
-          <BookList books={books} />
-        )}
-        <div className="mt-20 pt-10 border-t border-border-custom flex justify-center">
+        </main>
+        <footer className="py-10 bg-white border-t border-zinc-100 flex justify-center">
           <ErrorButton />
-        </div>
-      </main>
+        </footer>
+      </div>
     );
   }
 }
