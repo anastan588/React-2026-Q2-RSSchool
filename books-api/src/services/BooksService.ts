@@ -6,7 +6,7 @@ class BookService {
 
   static async searchBooks(query: string, options: { page?: number } = {}): Promise<Book[]> {
     const page = options.page || 1;
-    const trimmedQuery = query.trim() || 'Agatha';
+    const trimmedQuery = query.trim() || 'A.A.';
 
     const url = new URL(`${this.BASE_URL}/search.json`);
     url.searchParams.set('author', trimmedQuery);
