@@ -1,104 +1,76 @@
 import './App.css';
 
-import { useState } from 'react';
+import { Component } from 'react';
 
-import heroImg from './assets/hero.png';
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
+import BookList from '@/components/BookList';
+import ErrorButton from '@/components/ErrorButton';
+import ErrorMessage from '@/components/ErrorMessage';
+import Loader from '@/components/Loader';
+import SearchField from '@/components/SearchField';
+import BookService from '@/services/BooksService';
+import StorageService from '@/services/StorageService';
+import type { AppState } from '@/types/types';
 
-const App = () => {
-  const [count, setCount] = useState(0);
+class App extends Component<Record<string, never>, AppState> {
+  private lastAppliedQuery: string = '';
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img alt="" className="base" height="179" src={heroImg} width="170" />
-          <img alt="React logo" className="framework" src={reactLogo} />
-          <img alt="Vite logo" className="vite" src={viteLogo} />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button className="counter" type="button" onClick={() => setCount((count) => count + 1)}>
-          Count is {count}
-        </button>
-      </section>
+  state: AppState = {
+    query: StorageService.getSearchQuery(),
+    books: [],
+    isLoading: false,
+    error: null,
+  };
 
-      <div className="ticks" />
+  componentDidMount(): void {
+    const { query } = this.state;
+    this.loadBooks(query);
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#documentation-icon" />
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="logo" src={viteLogo} />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="button-icon" src={reactLogo} />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#social-icon" />
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#github-icon" />
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#discord-icon" />
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#x-icon" />
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#bluesky-icon" />
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+  handleSearch = (value: string): void => {
+    const trimmed = value.trim();
+    if (trimmed === this.lastAppliedQuery) return;
+    this.setState({ query: trimmed }, () => {
+      if (trimmed.length >= 3 || trimmed.length === 0) {
+        StorageService.setSearchQuery(trimmed);
+        this.loadBooks(trimmed);
+      }
+    });
+  };
 
-      <div className="ticks" />
-      <section id="spacer" />
-    </>
-  );
-};
+  private async loadBooks(query: string): Promise<void> {
+    this.setState({ isLoading: true, error: null });
+    this.lastAppliedQuery = query;
+    try {
+      const books = await BookService.searchBooks(query, { page: 1 });
+      this.setState({ books, isLoading: false });
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      this.setState({ error: errorMsg, isLoading: false, books: [] });
+    }
+  }
+
+  render() {
+    const { query, books, isLoading, error } = this.state;
+
+    return (
+      <div className="min-h-screen flex flex-col">
+        <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
+          <div className="max-w-5xl mx-auto">
+            <SearchField initialValue={query} onSearch={this.handleSearch} />
+          </div>
+        </header>
+        <main className="grow bg-white py-12 px-6">
+          <div className="max-w-5xl mx-auto">
+            {error && !isLoading ? <ErrorMessage message={error} onRetry={() => this.loadBooks(query)} /> : null}
+            {isLoading ? <Loader query={query} /> : <BookList books={books} hasError={!!error} />}
+          </div>
+        </main>
+        <footer className="py-10 bg-white border-t border-zinc-100 flex justify-center">
+          <ErrorButton />
+        </footer>
+      </div>
+    );
+  }
+}
 
 export default App;
