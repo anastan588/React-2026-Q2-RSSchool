@@ -94,4 +94,36 @@ describe('BookService', () => {
 
     await expect(BookService.searchBooks('query')).rejects.toThrow('Failed to fetch books');
   });
+
+  it('should return OLID URL when cover_i is missing but edition_key exists', async () => {
+    const mockDoc = {
+      key: '/works/OL123W',
+      title: 'Test Book',
+      edition_key: ['OL999M'],
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ docs: [mockDoc] }),
+    } as Response);
+
+    const [book] = await BookService.searchBooks('test');
+
+    expect(book.cover).toBe('https://covers.openlibrary.org/b/olid/OL999M-M.jpg');
+  });
+
+  it('should return mock-book.jpg when both cover_i and edition_key are missing', async () => {
+    const mockDoc = {
+      key: '/works/OL123W',
+      title: 'Test Book',
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ docs: [mockDoc] }),
+    } as Response);
+
+    const [book] = await BookService.searchBooks('test');
+    expect(book.cover).toBe('./../assets/mock-book.jpg');
+  });
 });

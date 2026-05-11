@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BookService from '@/services/BooksService';
@@ -35,6 +36,8 @@ describe('App Component', () => {
       openLibraryUrl: '',
     },
   ];
+
+  const user = userEvent.setup();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -90,5 +93,18 @@ describe('App Component', () => {
     await waitFor(() => {
       expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('triggers a retry and calls loadBooks when onRetry is clicked', async () => {
+    const errorMsg = 'Initial Error';
+    vi.mocked(BookService.searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce([]);
+
+    render(<App />);
+
+    const retryButton = await screen.findByRole('button', { name: /retry/i });
+
+    await user.click(retryButton);
+    expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText(errorMsg)).not.toBeInTheDocument();
   });
 });
