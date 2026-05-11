@@ -7,16 +7,16 @@ describe('SearchField Component', () => {
   const mockOnSearch = vi.fn();
 
   it('initializes with initialValue from props', () => {
-    render(<SearchField initialValue="React" onSearch={mockOnSearch} />);
+    render(<SearchField initialValue="Agatha" onSearch={mockOnSearch} />);
     const input = screen.getByPlaceholderText(/Search by author/i);
-    expect(input).toHaveValue('React');
+    expect(input).toHaveValue('Agatha');
   });
 
   it('updates localQuery state on input change', () => {
     render(<SearchField initialValue="" onSearch={mockOnSearch} />);
     const input = screen.getByPlaceholderText(/Search by author/i);
-    fireEvent.change(input, { target: { value: 'Redux' } });
-    expect(input).toHaveValue('Redux');
+    fireEvent.change(input, { target: { value: 'Agatha' } });
+    expect(input).toHaveValue('Agatha');
   });
 
   it('shows error message if query is less than 3 characters on submit', () => {

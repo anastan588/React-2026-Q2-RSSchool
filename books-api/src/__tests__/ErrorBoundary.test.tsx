@@ -39,7 +39,6 @@ describe('ErrorBoundary Component', () => {
   });
 
   it('reloads the page when the reset button is clicked', () => {
-    // Мокаем window.location.reload
     const reloadMock = vi.fn();
     vi.stubGlobal('location', { reload: reloadMock });
 
@@ -51,8 +50,6 @@ describe('ErrorBoundary Component', () => {
 
     const button = screen.getByRole('button', { name: /reload app/i });
     fireEvent.click(button);
-
-    // Проверяем, что лоджика сработала
     expect(reloadMock).toHaveBeenCalledTimes(1);
   });
 
