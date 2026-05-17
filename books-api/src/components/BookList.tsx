@@ -11,7 +11,7 @@ export const BookList = ({ books, hasError, onBookSelect }: BookListProps) => {
   }
 
   return (
-    <div className="book-grid">
+    <div className="book-grid" data-testid="book-grid">
       {books.map((book) => (
         <div
           key={book.id}

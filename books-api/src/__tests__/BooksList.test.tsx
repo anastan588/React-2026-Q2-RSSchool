@@ -49,10 +49,11 @@ describe('BookList Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders with the correct CSS class for the grid', () => {
-    render(<BookList books={mockBooks} hasError={false} />);
+  it('renders with the correct CSS class for the grid layout wrapper', () => {
+    render(<BookList books={mockBooks} hasError={false} onBookSelect={vi.fn()} />);
+    const grid = screen.getByTestId('book-grid');
 
-    const grid = screen.getByText('Book 1').parentElement;
+    expect(grid).toBeInTheDocument();
     expect(grid).toHaveClass('book-grid');
   });
 });

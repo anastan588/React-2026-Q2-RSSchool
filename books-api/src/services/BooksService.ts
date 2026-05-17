@@ -97,7 +97,6 @@ export const fetchBookDetails = async (
 
     const data = await response.json();
 
-    // 🌟 Normalize flexible Open Library description property structures (String vs Object)
     let parsedDescription = 'No summary profile registered for this edition.';
     if (typeof data.description === 'string') {
       parsedDescription = data.description;
@@ -108,14 +107,13 @@ export const fetchBookDetails = async (
     return {
       id: data.key ?? bookId,
       title: data.title ?? 'Unknown Title',
-      author: data.authors ? 'Details Loaded' : 'Unknown Author', // Left fallback baseline
+      author: data.authors ? 'Details Loaded' : 'Unknown Author',
       category: data.subjects?.[0] ?? 'General',
       cover: data.covers?.[0] ? `${COVERS_BASE_URL}/id/${data.covers[0]}-M.jpg` : './../assets/mock-book.jpg',
       openLibraryUrl: `${BASE_URL}${data.key ?? bookId}`,
-      // 🌟 Expose additional mapped descriptive details derived from payload
       description: parsedDescription,
       publishDate: data.first_publish_date ?? 'Unknown Date',
-      places: data.subject_places?.slice(0, 4) || [], // Keep the top 4 locations
+      places: data.subject_places?.slice(0, 4) || [],
     };
   } catch (error) {
     throw new Error('Failed to fetch individual book profiles.', { cause: error });
