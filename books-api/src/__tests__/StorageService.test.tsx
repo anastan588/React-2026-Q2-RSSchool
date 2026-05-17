@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import StorageService from '@/services/StorageService';
+import StorageService from '@/hooks/StorageService';
 
 describe('StorageService', () => {
   const SEARCH_KEY = 'last_search_query';

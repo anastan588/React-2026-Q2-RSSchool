@@ -7,8 +7,8 @@ import ErrorButton from '@/components/ErrorButton';
 import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
 import SearchField from '@/components/SearchField';
+import StorageService from '@/hooks/StorageService';
 import BookService from '@/services/BooksService';
-import StorageService from '@/services/StorageService';
 import type { AppState } from '@/types/types';
 
 class App extends Component<Record<string, never>, AppState> {

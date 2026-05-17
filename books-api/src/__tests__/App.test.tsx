@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
+import StorageService from '@/hooks/StorageService';
 import BookService from '@/services/BooksService';
-import StorageService from '@/services/StorageService';
 import type { Book } from '@/types/types';
 
 vi.mock('@/services/BooksService');
