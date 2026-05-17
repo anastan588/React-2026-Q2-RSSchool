@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import BookService from '@/services/BooksService';
+import { searchBooks } from '@/services/BooksService';
 
 describe('BookService', () => {
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe('BookService', () => {
       json: () => Promise.resolve(mockResponseData),
     } as Response);
 
-    const books = await BookService.searchBooks('Tolkien');
+    const books = await searchBooks('Tolkien');
 
     expect(books).toHaveLength(1);
     const [firstBook] = books;
@@ -39,7 +39,7 @@ describe('BookService', () => {
     } as Response);
 
     try {
-      await BookService.searchBooks('error');
+      await searchBooks('error');
     } catch (error) {
       const err = error as Error & { cause: Error };
       expect(err.message).toContain('Failed to fetch books');
@@ -54,7 +54,7 @@ describe('BookService', () => {
     } as Response);
 
     try {
-      await BookService.searchBooks('test');
+      await searchBooks('test');
     } catch (error) {
       const err = error as Error & { cause: Error };
       expect(err.cause.message).toBe('Too many requests. Please slow down and try again in a minute.');
@@ -68,7 +68,7 @@ describe('BookService', () => {
     } as Response);
 
     try {
-      await BookService.searchBooks('test');
+      await searchBooks('test');
     } catch (error) {
       const err = error as Error & { cause: Error };
       expect(err.cause.message).toBe('We could not find the books you are looking for due to a client error.');
@@ -82,7 +82,7 @@ describe('BookService', () => {
     } as Response);
 
     try {
-      await BookService.searchBooks('test');
+      await searchBooks('test');
     } catch (error) {
       const err = error as Error & { cause: Error };
       expect(err.cause.message).toBe('Search service not found (404). Please contact support.');
@@ -92,7 +92,7 @@ describe('BookService', () => {
   it('handles network failure', async () => {
     vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
 
-    await expect(BookService.searchBooks('query')).rejects.toThrow('Failed to fetch books');
+    await expect(searchBooks('query')).rejects.toThrow('Failed to fetch books');
   });
 
   it('should return OLID URL when cover_i is missing but edition_key exists', async () => {
@@ -107,7 +107,7 @@ describe('BookService', () => {
       json: async () => ({ docs: [mockDoc] }),
     } as Response);
 
-    const [book] = await BookService.searchBooks('test');
+    const [book] = await searchBooks('test');
 
     expect(book.cover).toBe('https://covers.openlibrary.org/b/olid/OL999M-M.jpg');
   });
@@ -123,7 +123,7 @@ describe('BookService', () => {
       json: async () => ({ docs: [mockDoc] }),
     } as Response);
 
-    const [book] = await BookService.searchBooks('test');
+    const [book] = await searchBooks('test');
     expect(book.cover).toBe('./../assets/mock-book.jpg');
   });
 });
