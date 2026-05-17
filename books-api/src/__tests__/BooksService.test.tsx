@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { searchBooks } from '@/services/BooksService';
+import { fetchBookDetails, searchBooks } from '@/services/BooksService';
 
 describe('BookService', () => {
   beforeEach(() => {
@@ -147,5 +147,38 @@ describe('BookService', () => {
     const book = response.books[0];
 
     expect(book.cover).toBe('./../assets/mock-book.jpg');
+  });
+
+  it('successfully fetches and transforms a complete book details payload', async () => {
+    const mockApiResponse = {
+      key: '/works/OL27482W',
+      title: 'The Hobbit',
+      authors: [{ author: { key: '/authors/OL26320A' } }],
+      subjects: ['Fantasy', 'Adventure'],
+      covers: [14627509],
+      description: 'A tale of high adventure...',
+      first_publish_date: 'January 1938',
+      subject_places: ['Middle-earth', 'Rivendell', 'Mirkwood'],
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockApiResponse),
+    } as Response);
+
+    const result = await fetchBookDetails('OL27482W');
+
+    expect(fetch).toHaveBeenCalledWith('https://openlibrary.org/works/OL27482W.json');
+    expect(result).toEqual({
+      id: '/works/OL27482W',
+      title: 'The Hobbit',
+      author: 'Details Loaded',
+      category: 'Fantasy',
+      cover: 'https://covers.openlibrary.org/b/id/14627509-M.jpg',
+      openLibraryUrl: 'https://openlibrary.org/works/OL27482W',
+      description: 'A tale of high adventure...',
+      publishDate: 'January 1938',
+      places: ['Middle-earth', 'Rivendell', 'Mirkwood'],
+    });
   });
 });
