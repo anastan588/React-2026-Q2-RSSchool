@@ -7,7 +7,7 @@ import ErrorButton from '@/components/ErrorButton';
 import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
 import SearchField from '@/components/SearchField';
-import StorageService from '@/hooks/StorageService';
+import StorageService from '@/hooks/StorageHook';
 import BookService from '@/services/BooksService';
 import type { AppState } from '@/types/types';
 

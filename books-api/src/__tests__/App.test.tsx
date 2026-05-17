@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
-import StorageService from '@/hooks/StorageService';
+import StorageService from '@/hooks/StorageHook';
 import BookService from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
