@@ -7,6 +7,14 @@ export interface AppState {
   error: string | null;
 }
 
+export interface ButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  className?: string;
+  disabled?: boolean;
+}
+
 export interface Book {
   id: string;
   title: string;
