@@ -7,8 +7,9 @@ describe('BookService', () => {
     vi.stubGlobal('fetch', vi.fn());
   });
 
-  it('successfully fetches and transforms book data', async () => {
+  it('successfully fetches, transforms book data, and calculates totalPages', async () => {
     const mockResponseData = {
+      numFound: 105,
       docs: [
         {
           key: '/works/123',
@@ -25,11 +26,29 @@ describe('BookService', () => {
       json: () => Promise.resolve(mockResponseData),
     } as Response);
 
-    const books = await searchBooks('Tolkien');
+    const response = await searchBooks('Tolkien');
+    expect(response.books).toHaveLength(1);
+    expect(response.totalPages).toBe(6);
 
-    expect(books).toHaveLength(1);
-    const [firstBook] = books;
+    const firstBook = response.books[0];
     expect(firstBook.title).toBe('Test Book');
+    expect(firstBook.author).toBe('Test Author');
+  });
+
+  it('defaults totalPages to 1 when numFound is missing or zero', async () => {
+    const mockResponseData = {
+      numFound: 0,
+      docs: [],
+    };
+
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockResponseData),
+    } as Response);
+
+    const response = await searchBooks('Empty');
+    expect(response.books).toHaveLength(0);
+    expect(response.totalPages).toBe(1);
   });
 
   it('throws specific error for 500 status', async () => {
@@ -38,13 +57,13 @@ describe('BookService', () => {
       status: 500,
     } as Response);
 
-    try {
-      await searchBooks('error');
-    } catch (error) {
+    const promise = searchBooks('error');
+
+    await expect(promise).rejects.toThrow('Failed to fetch books');
+    await expect(promise).rejects.toSatisfy((error: unknown) => {
       const err = error as Error & { cause: Error };
-      expect(err.message).toContain('Failed to fetch books');
-      expect(err.cause.message).toBe('Our library server is currently down. Please try again later.');
-    }
+      return err.cause?.message === 'Our library server is currently down. Please try again later.';
+    });
   });
 
   it('throws specific error for 429 status (Rate Limit)', async () => {
@@ -53,12 +72,12 @@ describe('BookService', () => {
       status: 429,
     } as Response);
 
-    try {
-      await searchBooks('test');
-    } catch (error) {
+    const promise = searchBooks('test');
+
+    await expect(promise).rejects.toSatisfy((error: unknown) => {
       const err = error as Error & { cause: Error };
-      expect(err.cause.message).toBe('Too many requests. Please slow down and try again in a minute.');
-    }
+      return err.cause?.message === 'Too many requests. Please slow down and try again in a minute.';
+    });
   });
 
   it('throws generic client error for other 4xx statuses', async () => {
@@ -67,12 +86,12 @@ describe('BookService', () => {
       status: 400,
     } as Response);
 
-    try {
-      await searchBooks('test');
-    } catch (error) {
+    const promise = searchBooks('test');
+
+    await expect(promise).rejects.toSatisfy((error: unknown) => {
       const err = error as Error & { cause: Error };
-      expect(err.cause.message).toBe('We could not find the books you are looking for due to a client error.');
-    }
+      return err.cause?.message === 'We could not find the books you are looking for due to a client error.';
+    });
   });
 
   it('throws specific error for 404 status (Not Found)', async () => {
@@ -81,12 +100,12 @@ describe('BookService', () => {
       status: 404,
     } as Response);
 
-    try {
-      await searchBooks('test');
-    } catch (error) {
+    const promise = searchBooks('test');
+
+    await expect(promise).rejects.toSatisfy((error: unknown) => {
       const err = error as Error & { cause: Error };
-      expect(err.cause.message).toBe('Search service not found (404). Please contact support.');
-    }
+      return err.cause?.message === 'Search service not found (404). Please contact support.';
+    });
   });
 
   it('handles network failure', async () => {
@@ -107,7 +126,8 @@ describe('BookService', () => {
       json: async () => ({ docs: [mockDoc] }),
     } as Response);
 
-    const [book] = await searchBooks('test');
+    const response = await searchBooks('test');
+    const book = response.books[0];
 
     expect(book.cover).toBe('https://covers.openlibrary.org/b/olid/OL999M-M.jpg');
   });
@@ -123,7 +143,9 @@ describe('BookService', () => {
       json: async () => ({ docs: [mockDoc] }),
     } as Response);
 
-    const [book] = await searchBooks('test');
+    const response = await searchBooks('test');
+    const book = response.books[0];
+
     expect(book.cover).toBe('./../assets/mock-book.jpg');
   });
 });
