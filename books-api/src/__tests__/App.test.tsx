@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
 import useSearchStorage from '@/hooks/StorageHook';
-import BookService from '@/services/BooksService';
+import { searchBooks } from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
 vi.mock('@/services/BooksService');
@@ -64,7 +64,7 @@ describe('App Component Integration', () => {
       clearSearch: mockClearSearch,
     });
 
-    vi.mocked(BookService.searchBooks).mockResolvedValue(mockBooks);
+    vi.mocked(searchBooks).mockResolvedValue(mockBooks);
   });
 
   it('reads from useSearchStorage hook on mount and performs search', async () => {
@@ -77,7 +77,7 @@ describe('App Component Integration', () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('Tolkien', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('Tolkien', expect.any(Object));
     });
   });
 
@@ -92,7 +92,7 @@ describe('App Component Integration', () => {
 
     expect(mockSetSearchQuery).toHaveBeenCalledWith('Orwell');
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('Orwell', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('Orwell', expect.any(Object));
     });
   });
 
@@ -110,7 +110,7 @@ describe('App Component Integration', () => {
 
   it('renders ErrorMessage and triggers data reload upon clicking retry', async () => {
     const errorMsg = 'API Failure';
-    vi.mocked(BookService.searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce(mockBooks);
+    vi.mocked(searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce(mockBooks);
 
     render(<App />);
 
@@ -121,7 +121,7 @@ describe('App Component Integration', () => {
     await user.click(retryBtn);
 
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
+      expect(searchBooks).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -134,14 +134,14 @@ describe('App Component Integration', () => {
     await user.click(button);
     await user.click(button);
 
-    expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
+    expect(searchBooks).toHaveBeenCalledTimes(2);
   });
 
   it('covers fallbacks when the local storage hook contains an empty string', async () => {
     render(<App />);
 
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('', expect.any(Object));
     });
   });
 
@@ -184,9 +184,7 @@ describe('App Component Integration', () => {
       clearSearch: mockClearSearch,
     });
 
-    vi.mocked(BookService.searchBooks).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve([]), 50)),
-    );
+    vi.mocked(searchBooks).mockImplementation(() => new Promise((resolve) => setTimeout(() => resolve([]), 50)));
 
     render(<App />);
 

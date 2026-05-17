@@ -8,7 +8,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
 import SearchField from '@/components/SearchField';
 import useSearchStorage from '@/hooks/StorageHook';
-import BookService from '@/services/BooksService';
+import { searchBooks } from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
 export const App = () => {
@@ -26,7 +26,7 @@ export const App = () => {
     lastAppliedQuery.current = query;
 
     try {
-      const fetchedBooks = await BookService.searchBooks(query, { page: 1 });
+      const fetchedBooks = await searchBooks(query, { page: 1 });
       setBooks(fetchedBooks);
       setIsLoading(false);
     } catch (err: unknown) {
