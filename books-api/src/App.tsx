@@ -10,6 +10,7 @@ import Loader from '@/components/Loader';
 import Pagination from '@/components/Pangination';
 import SearchField from '@/components/SearchField';
 import useSearchStorage from '@/hooks/StorageHook';
+import NotFound from '@/pages/NotFound';
 import { searchBooks } from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
@@ -23,6 +24,7 @@ export const App = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
 
   const urlPageStr = searchParams.get('page');
+  const isInvalidPageParam = urlPageStr !== null && !/^\d+$/.test(urlPageStr);
   const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage;
 
   const lastAppliedState = useRef<{ query: string; page: number }>({
@@ -92,6 +94,10 @@ export const App = () => {
       });
     }
   };
+
+  if (isInvalidPageParam) {
+    return <NotFound />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

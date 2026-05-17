@@ -375,4 +375,13 @@ describe('App Component Integration', () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(searchBooks, 'Redundant API calls should be blocked by the reference guard').not.toHaveBeenCalled();
   });
+
+  it('displays the 404 NotFound layout if the URL page query parameter is malformed', async () => {
+    renderAppWithRouter('/?page=2/145');
+    const heading = await screen.findByRole('heading', { name: /404/i });
+    const message = screen.getByText(/Page Not Found/i);
+
+    expect(heading).toBeInTheDocument();
+    expect(message).toBeInTheDocument();
+  });
 });
