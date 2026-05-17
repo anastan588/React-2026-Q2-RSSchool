@@ -164,6 +164,11 @@ describe('App Component Integration', () => {
     const button = screen.getByRole('button', { name: /search/i });
 
     await user.clear(input);
+    await user.type(input, 'Valid Query');
+    await user.click(button);
+    expect(mockSetSearchQuery).toHaveBeenCalledWith('Valid Query');
+
+    await user.clear(input);
     await user.click(button);
 
     await waitFor(() => {
