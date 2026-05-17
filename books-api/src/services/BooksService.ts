@@ -1,7 +1,9 @@
-import type { Book, OpenLibraryDoc } from '@/types/types';
+import type { Book, OpenLibraryDoc, SearchBooksResponse } from '@/types/types';
 
 const BASE_URL = 'https://openlibrary.org';
 const COVERS_BASE_URL = 'https://covers.openlibrary.org/b';
+
+const ITEMS_PER_PAGE = 20;
 
 const handleHttpError = (status: number): void => {
   if (status >= 500) {
@@ -28,14 +30,14 @@ const getCoverUrl = (doc: OpenLibraryDoc): string => {
   return './../assets/mock-book.jpg';
 };
 
-export const searchBooks = async (query: string, options: { page?: number } = {}): Promise<Book[]> => {
+export const searchBooks = async (query: string, options: { page?: number } = {}): Promise<SearchBooksResponse> => {
   const page = options.page || 1;
   const trimmedQuery = query.trim() || 'A.A.';
 
   const url = new URL(`${BASE_URL}/search.json`);
   url.searchParams.set('author', trimmedQuery);
   url.searchParams.set('page', page.toString());
-  url.searchParams.set('limit', '50');
+  url.searchParams.set('limit', ITEMS_PER_PAGE.toString());
   url.searchParams.set('fields', 'key,title,author_name,cover_i,subject,edition_key');
 
   try {
@@ -47,9 +49,11 @@ export const searchBooks = async (query: string, options: { page?: number } = {}
 
     const data = await response.json();
 
-    if (!data.docs) return [];
+    if (!data.docs) {
+      return { books: [], totalPages: 1 };
+    }
 
-    return data.docs.map(
+    const books = data.docs.map(
       (doc: OpenLibraryDoc): Book => ({
         id: doc.key,
         title: doc.title,
@@ -59,6 +63,14 @@ export const searchBooks = async (query: string, options: { page?: number } = {}
         openLibraryUrl: `${BASE_URL}${doc.key}`,
       }),
     );
+
+    const totalItems = data.numFound || 0;
+    const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+
+    return {
+      books,
+      totalPages,
+    };
   } catch (error) {
     throw new Error('Failed to fetch books. Please check your internet connection.', { cause: error });
   }

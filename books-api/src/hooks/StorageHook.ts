@@ -1,39 +1,57 @@
 import { useState } from 'react';
 
-const SEARCH_KEY = 'last_search_query';
+import type { StorageState } from '@/types/types';
+
+const STORAGE_KEY = 'search_service_state';
+const DEFAULT_STATE: StorageState = {
+  query: '',
+  page: 1,
+};
 
 export const useSearchStorage = () => {
-  const [searchQuery, setSearchQueryState] = useState<string>(() => {
+  const [storageState, setStorageState] = useState<StorageState>(() => {
     try {
-      return localStorage.getItem(SEARCH_KEY) || '';
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? (JSON.parse(saved) as StorageState) : DEFAULT_STATE;
     } catch (error) {
-      console.error('Error reading localStorage', error);
-      return '';
+      console.error('Error reading state from localStorage', error);
+      return DEFAULT_STATE;
     }
   });
 
-  const setSearchQuery = (query: string): void => {
+  const saveState = (updatedState: StorageState) => {
+    setStorageState(updatedState);
     try {
-      const trimmedQuery = query.trim();
-      setSearchQueryState(trimmedQuery);
-      localStorage.setItem(SEARCH_KEY, trimmedQuery);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
     } catch (error) {
-      console.error('Error setting localStorage', error);
+      console.error('Error saving state to localStorage', error);
     }
+  };
+
+  const setSearchQuery = (query: string): void => {
+    const trimmedQuery = query.trim();
+    saveState({
+      query: trimmedQuery,
+      page: 1,
+    });
+  };
+
+  const setStoragePage = (page: number): void => {
+    saveState({
+      ...storageState,
+      page,
+    });
   };
 
   const clearSearch = (): void => {
-    try {
-      setSearchQueryState('');
-      localStorage.removeItem(SEARCH_KEY);
-    } catch (error) {
-      console.error('Error removing localStorage', error);
-    }
+    saveState(DEFAULT_STATE);
   };
 
   return {
-    searchQuery,
+    searchQuery: storageState.query,
+    storagePage: storageState.page,
     setSearchQuery,
+    setStoragePage,
     clearSearch,
   };
 };

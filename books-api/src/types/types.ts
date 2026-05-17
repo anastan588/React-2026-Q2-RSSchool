@@ -32,6 +32,11 @@ export interface Book {
   openLibraryUrl: string;
 }
 
+export interface SearchBooksResponse {
+  books: Book[];
+  totalPages: number;
+}
+
 export interface OpenLibraryDoc {
   key: string;
   title: string;
@@ -84,4 +89,18 @@ export interface StateErrorButton {
 export interface ErrorMessageProps {
   message: string;
   onRetry: () => void;
+}
+
+//LocalStorage
+
+export interface StorageState {
+  query: string;
+  page: number;
+}
+
+//Pangination
+export interface PaginationProps {
+  current: number;
+  total: number;
+  onPageChange: (page: number) => void;
 }
