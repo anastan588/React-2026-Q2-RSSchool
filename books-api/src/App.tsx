@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
 import ErrorButton from '@/components/ErrorButton';
@@ -102,8 +102,33 @@ export const App = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
-        <div className="max-w-5xl mx-auto">
-          <SearchField initialValue={searchQuery} onSearch={handleSearch} />
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="grow w-full">
+            <SearchField initialValue={searchQuery} onSearch={handleSearch} />
+          </div>
+          <nav className="shrink-0 w-full sm:w-auto flex justify-end">
+            <Link
+              to="/about"
+              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-zinc-200 rounded-xl shadow-xs transition-all duration-200 ease-in-out hover:bg-slate-50 hover:text-slate-900 hover:border-zinc-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-98"
+            >
+              {/* Animated Informational Icon */}
+              <svg
+                className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  pathLength="1"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>About the App</span>
+            </Link>
+          </nav>
         </div>
       </header>
       <main className="grow bg-white py-12 px-6">
