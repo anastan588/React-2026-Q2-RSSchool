@@ -1,7 +1,7 @@
 import './App.css';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
 import ErrorButton from '@/components/ErrorButton';
@@ -17,6 +17,8 @@ import type { Book } from '@/types/types';
 export const App = () => {
   const { searchQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -26,6 +28,8 @@ export const App = () => {
   const urlPageStr = searchParams.get('page');
   const isInvalidPageParam = urlPageStr !== null && !/^\d+$/.test(urlPageStr);
   const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage;
+
+  const isDetailsPanelOpen = location.pathname.includes('/details/');
 
   const lastAppliedState = useRef<{ query: string; page: number }>({
     query: '',
@@ -95,12 +99,31 @@ export const App = () => {
     }
   };
 
+  const handleBookSelect = (bookId: string) => {
+    const cleanedId = bookId.replace('/works/', '');
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    const pageParam = nextParams.get('page');
+    if (pageParam === '1' || !pageParam) {
+      nextParams.delete('page');
+    }
+    const targetUrl = `/details/${cleanedId}`;
+
+    navigate(targetUrl);
+  };
+
+  const handleCloseDetails = () => {
+    if (isDetailsPanelOpen) {
+      navigate(urlPageStr ? `/?page=${urlPageStr}` : '/');
+    }
+  };
+
   if (isInvalidPageParam) {
     return <NotFound />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" onClick={handleCloseDetails}>
       <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="grow w-full">
@@ -108,22 +131,21 @@ export const App = () => {
           </div>
           <nav className="shrink-0 w-full sm:w-auto flex justify-end">
             <Link
-              to="/about"
               className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-zinc-200 rounded-xl shadow-xs transition-all duration-200 ease-in-out hover:bg-slate-50 hover:text-slate-900 hover:border-zinc-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-98"
+              to="/about"
             >
-              {/* Animated Informational Icon */}
               <svg
                 className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
                 fill="none"
-                viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                viewBox="0 0 24 24"
               >
                 <path
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  pathLength="1"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  pathLength="1"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
               <span>About the App</span>
@@ -131,26 +153,46 @@ export const App = () => {
           </nav>
         </div>
       </header>
-      <main className="grow bg-white py-12 px-6">
-        <div className="max-w-5xl mx-auto">
-          {error && !isLoading ? (
-            <ErrorMessage message={error} onRetry={() => loadBooks(searchQuery, currentPage)} />
-          ) : null}
+      <div className="grow flex w-full max-w-[1400px] mx-auto overflow-hidden relative">
+        <main
+          className={`grow transition-all duration-300 py-12 px-6 overflow-y-auto ${
+            isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'
+          }`}
+        >
+          <div className="max-w-5xl mx-auto" onClick={(e) => e.stopPropagation()}>
+            {error && !isLoading ? (
+              <ErrorMessage message={error} onRetry={() => loadBooks(searchQuery, currentPage)} />
+            ) : null}
 
-          {isLoading ? (
-            <Loader query={searchQuery} />
-          ) : (
-            <>
-              {!error && books.length > 0 ? (
-                <div className="mb-8 flex justify-center">
-                  <Pagination current={currentPage} total={totalPages} onPageChange={handlePageChange} />
-                </div>
-              ) : null}
-              <BookList books={books} hasError={!!error} />
-            </>
-          )}
-        </div>
-      </main>
+            {isLoading ? (
+              <Loader query={searchQuery} />
+            ) : (
+              <>
+                {!error && books.length > 0 ? (
+                  <div className="mb-8 flex justify-center">
+                    <Pagination current={currentPage} total={totalPages} onPageChange={handlePageChange} />
+                  </div>
+                ) : null}
+                <BookList
+                  books={books}
+                  hasError={!!error}
+                  onBookSelect={(book) => {
+                    console.log('click');
+                    handleBookSelect(book.id);
+                  }}
+                />
+              </>
+            )}
+          </div>
+        </main>
+
+        {isDetailsPanelOpen ? (
+          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-80px)] sticky top-[80px] z-20 shrink-0">
+            <Outlet />
+          </aside>
+        ) : null}
+      </div>
+
       <footer className="py-10 bg-white border-t border-zinc-100 flex justify-center">
         <ErrorButton />
       </footer>

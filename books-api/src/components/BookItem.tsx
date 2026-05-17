@@ -6,7 +6,7 @@ import type { BookItemProps } from '@/types/types';
 const BookItem = ({ book }: BookItemProps) => {
   const [hasError, setHasError] = useState(false);
 
-  const { title, author, category, cover } = book;
+  const { id, title, author, category, cover } = book;
 
   const handleError = (): void => {
     setHasError(true);
@@ -15,7 +15,7 @@ const BookItem = ({ book }: BookItemProps) => {
   const displayCover = !cover || hasError ? neutralBookImage : cover;
 
   return (
-    <article className="book-item group">
+    <article className="book-item group cursor-pointer" data-book-id={id}>
       <div className="book-cover-wrapper bg-card">
         <div className="book-spine" />
         <img

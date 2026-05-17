@@ -75,3 +75,49 @@ export const searchBooks = async (query: string, options: { page?: number } = {}
     throw new Error('Failed to fetch books. Please check your internet connection.', { cause: error });
   }
 };
+
+export const fetchBookDetails = async (
+  bookId: string,
+): Promise<
+  Book & {
+    description: string;
+    publishDate: string;
+    places: string[];
+  }
+> => {
+  const cleanedId = bookId.startsWith('/') ? bookId.substring(1) : `works/${bookId}`;
+  const url = `${BASE_URL}/${cleanedId}.json`;
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      handleHttpError(response.status);
+    }
+
+    const data = await response.json();
+
+    // 🌟 Normalize flexible Open Library description property structures (String vs Object)
+    let parsedDescription = 'No summary profile registered for this edition.';
+    if (typeof data.description === 'string') {
+      parsedDescription = data.description;
+    } else if (data.description?.value) {
+      parsedDescription = data.description.value;
+    }
+
+    return {
+      id: data.key ?? bookId,
+      title: data.title ?? 'Unknown Title',
+      author: data.authors ? 'Details Loaded' : 'Unknown Author', // Left fallback baseline
+      category: data.subjects?.[0] ?? 'General',
+      cover: data.covers?.[0] ? `${COVERS_BASE_URL}/id/${data.covers[0]}-M.jpg` : './../assets/mock-book.jpg',
+      openLibraryUrl: `${BASE_URL}${data.key ?? bookId}`,
+      // 🌟 Expose additional mapped descriptive details derived from payload
+      description: parsedDescription,
+      publishDate: data.first_publish_date ?? 'Unknown Date',
+      places: data.subject_places?.slice(0, 4) || [], // Keep the top 4 locations
+    };
+  } catch (error) {
+    throw new Error('Failed to fetch individual book profiles.', { cause: error });
+  }
+};

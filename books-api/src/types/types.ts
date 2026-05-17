@@ -37,6 +37,18 @@ export interface SearchBooksResponse {
   totalPages: number;
 }
 
+export interface ExtendedBook {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  cover: string;
+  openLibraryUrl: string;
+  description: string;
+  publishDate: string;
+  places: string[];
+}
+
 export interface OpenLibraryDoc {
   key: string;
   title: string;
@@ -53,6 +65,7 @@ export interface BookItemProps {
 export interface BookListProps {
   books: Book[];
   hasError: boolean;
+  onBookSelect?: (book: Book) => void;
 }
 
 export interface LoaderProps {

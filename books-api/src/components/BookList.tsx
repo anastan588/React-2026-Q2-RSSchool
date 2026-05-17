@@ -1,7 +1,7 @@
 import BookItem from '@/components/BookItem';
 import type { BookListProps } from '@/types/types';
 
-const BookList = ({ books, hasError }: BookListProps) => {
+export const BookList = ({ books, hasError, onBookSelect }: BookListProps) => {
   if (hasError) {
     return null;
   }
@@ -13,7 +13,15 @@ const BookList = ({ books, hasError }: BookListProps) => {
   return (
     <div className="book-grid">
       {books.map((book) => (
-        <BookItem key={book.id} book={book} />
+        <div
+          key={book.id}
+          onClick={(e) => {
+            e.stopPropagation();
+            onBookSelect?.(book);
+          }}
+        >
+          <BookItem book={book} />
+        </div>
       ))}
     </div>
   );
