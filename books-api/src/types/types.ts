@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 export interface AppState {
   query: string;
@@ -13,6 +13,14 @@ export interface ButtonProps {
   type?: 'button' | 'submit' | 'reset';
   className?: string;
   disabled?: boolean;
+}
+
+export interface InputProps {
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  type?: 'text' | 'search' | 'number';
+  className?: string;
 }
 
 export interface Book {
