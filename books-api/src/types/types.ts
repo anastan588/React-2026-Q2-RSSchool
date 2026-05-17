@@ -25,8 +25,8 @@ export interface OpenLibraryDoc {
   edition_key?: string[];
 }
 
-export interface BookItemState {
-  hasError: boolean;
+export interface BookItemProps {
+  book: Book;
 }
 
 export interface BookListProps {
