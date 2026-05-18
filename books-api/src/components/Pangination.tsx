@@ -8,13 +8,9 @@ export const Pagination = ({ current, total }: Omit<PaginationProps, 'onPageChan
   const navigate = useNavigate();
 
   if (total <= 1) return null;
-
-  // Функция для безопасного и мгновенного переключения страниц
   const handlePageChange = (targetPage: number) => {
     const nextParams = new URLSearchParams(searchParams.toString());
     nextParams.set('page', String(targetPage));
-
-    // Переходим по новому URL. Роутер гарантированно зафиксирует изменение с 1-го клика
     navigate(`/?${nextParams.toString()}`);
   };
 
