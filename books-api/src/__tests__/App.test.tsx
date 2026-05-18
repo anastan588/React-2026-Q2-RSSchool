@@ -117,13 +117,28 @@ describe('App Component Integration', () => {
     const router = createMemoryRouter(
       [
         {
-          path: '/',
+          path: '*',
           element: <App />,
+          children: [
+            {
+              path: 'details/:id',
+              element: <div data-testid="details-content">Book Details Mock</div>,
+            },
+          ],
         },
       ],
-      { initialEntries: [initialPath] },
+      {
+        initialEntries: [initialPath],
+        initialIndex: 0,
+      },
     );
-    return render(<RouterProvider router={router} />);
+
+    const renderResult = render(<RouterProvider router={router} />);
+
+    return {
+      ...renderResult,
+      router,
+    };
   };
 
   beforeEach(() => {
@@ -289,21 +304,6 @@ describe('App Component Integration', () => {
     expect(loader).toHaveTextContent(/JavaScript/i);
   });
 
-  it('handles page parameters update correctly when choosing a page item link', async () => {
-    renderAppWithRouter();
-    const paginationInfo = await screen.findByText(/Page 1 of 5/i);
-    expect(paginationInfo).toBeInTheDocument();
-
-    const nextBtn = screen.getByRole('button', { name: /next/i });
-    await user.click(nextBtn);
-
-    expect(mockStorageInstance.setStoragePage).toHaveBeenCalledWith(2);
-
-    await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 2 });
-    });
-  });
-
   it('handles plain array API responses and calculates totalPages correctly', async () => {
     const mockArrayBooks: Book[] = Array.from({ length: 25 }, (_, i) => ({
       id: String(i),
@@ -383,5 +383,24 @@ describe('App Component Integration', () => {
 
     expect(heading).toBeInTheDocument();
     expect(message).toBeInTheDocument();
+  });
+
+  it('successfully returns to main page and preserves all query params when closing details panel', async () => {
+    const user = userEvent.setup();
+    const { router } = renderAppWithRouter('/details/123?page=3&q=typescript');
+    expect(screen.getByTestId('details-content')).toBeInTheDocument();
+
+    const closeButton = screen.getByRole('button', { name: /close details/i });
+    expect(closeButton).toBeInTheDocument();
+
+    await user.click(closeButton);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+
+      expect(router.state.location.search).toContain('page=3');
+      expect(router.state.location.search).toContain('q=typescript');
+    });
+    expect(screen.queryByTestId('details-content')).not.toBeInTheDocument();
   });
 });

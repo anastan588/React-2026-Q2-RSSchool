@@ -14,8 +14,8 @@ import NotFound from '@/pages/NotFound';
 import { searchBooks } from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
-export const App = () => {
-  const { searchQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
+export const App: React.FC = () => {
+  const { searchQuery: initialQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,10 +26,13 @@ export const App = () => {
   const [totalPages, setTotalPages] = useState<number>(1);
 
   const urlPageStr = searchParams.get('page');
-  const isInvalidPageParam = urlPageStr !== null && !/^\d+$/.test(urlPageStr);
-  const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage;
+  const urlQueryStr = searchParams.get('q');
 
+  const isInvalidPageParam = urlPageStr !== null && !/^\d+$/.test(urlPageStr);
   const isDetailsPanelOpen = location.pathname.includes('/details/');
+
+  const currentQuery = urlQueryStr !== null ? urlQueryStr : initialQuery;
+  const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage > 1 ? storagePage : 1;
 
   const lastAppliedState = useRef<{ query: string; page: number }>({
     query: '',
@@ -43,6 +46,11 @@ export const App = () => {
 
     try {
       const response = await searchBooks(query, { page });
+
+      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
+        return;
+      }
+
       if (Array.isArray(response)) {
         setBooks(response);
         setTotalPages(Math.ceil(response.length / 10) || 1);
@@ -52,6 +60,9 @@ export const App = () => {
       }
       setIsLoading(false);
     } catch (err: unknown) {
+      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
+        return;
+      }
       const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
       setError(errorMsg);
       setIsLoading(false);
@@ -60,74 +71,80 @@ export const App = () => {
   }, []);
 
   useEffect(() => {
-    if (!searchParams.get('page') && storagePage > 1) {
-      setSearchParams((prev) => {
-        prev.set('page', String(storagePage));
-        return prev;
-      });
+    const hasPage = searchParams.has('page');
+    const hasQuery = searchParams.has('q');
+    if (!hasPage || !hasQuery) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+
+      if (!hasPage) {
+        const fallbackPage = storagePage > 1 ? String(storagePage) : '1';
+        nextParams.set('page', fallbackPage);
+      }
+
+      if (!hasQuery && initialQuery) {
+        nextParams.set('q', initialQuery);
+      }
+
+      // Заменяем текущую запись в истории, чтобы в URL появился ?page=1
+      setSearchParams(nextParams, { replace: true });
     }
-  }, []);
+  }, [searchParams, storagePage, initialQuery, setSearchParams]);
 
   useEffect(() => {
-    if (searchQuery === lastAppliedState.current.query && currentPage === lastAppliedState.current.page) {
+    if (currentQuery === lastAppliedState.current.query && currentPage === lastAppliedState.current.page) {
       return;
     }
 
-    Promise.resolve().then(() => {
-      loadBooks(searchQuery, currentPage);
-    });
-  }, [searchQuery, currentPage, loadBooks]);
+    loadBooks(currentQuery, currentPage);
+  }, [currentQuery, currentPage, loadBooks]);
 
-  const handlePageChange = (newPage: number): void => {
-    setStoragePage(newPage);
-    setSearchParams((prev) => {
-      prev.set('page', String(newPage));
-      return prev;
-    });
-  };
+  const handleSearch = useCallback(
+    (value: string): void => {
+      const trimmed = value.trim();
+      if (trimmed === lastAppliedState.current.query) return;
 
-  const handleSearch = (value: string): void => {
-    const trimmed = value.trim();
-    if (trimmed === lastAppliedState.current.query) return;
+      if (trimmed.length >= 3 || trimmed.length === 0) {
+        setSearchParams((prev) => {
+          const nextParams = new URLSearchParams(prev.toString());
+          nextParams.set('q', trimmed);
+          nextParams.set('page', '1');
+          return nextParams;
+        });
+        setSearchQuery(trimmed);
+        setStoragePage(1);
+      }
+    },
+    [setSearchQuery, setSearchParams, setStoragePage],
+  );
 
-    if (trimmed.length >= 3 || trimmed.length === 0) {
-      setSearchQuery(trimmed);
-      setSearchParams((prev) => {
-        prev.set('page', '1');
-        return prev;
-      });
-    }
-  };
+  const handleBookSelect = useCallback(
+    (bookId: string) => {
+      const cleanedId = bookId.replace('/works/', '');
+      navigate(`/details/${cleanedId}${location.search}`);
+    },
+    [navigate, location.search],
+  );
 
-  const handleBookSelect = (bookId: string) => {
-    const cleanedId = bookId.replace('/works/', '');
-    const nextParams = new URLSearchParams(searchParams.toString());
-
-    const pageParam = nextParams.get('page');
-    if (pageParam === '1' || !pageParam) {
-      nextParams.delete('page');
-    }
-    const targetUrl = `/details/${cleanedId}`;
-
-    navigate(targetUrl);
-  };
-
-  const handleCloseDetails = () => {
+  const handleCloseDetails = useCallback(() => {
     if (isDetailsPanelOpen) {
-      navigate(urlPageStr ? `/?page=${urlPageStr}` : '/');
+      navigate(
+        urlPageStr
+          ? `/?page=${urlPageStr}&q=${encodeURIComponent(currentQuery)}`
+          : `/?q=${encodeURIComponent(currentQuery)}`,
+      );
     }
-  };
+  }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
 
   if (isInvalidPageParam) {
     return <NotFound />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col" onClick={handleCloseDetails}>
+    <div className="min-h-screen flex flex-col">
       <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="grow w-full">
-            <SearchField initialValue={searchQuery} onSearch={handleSearch} />
+            <SearchField initialValue={currentQuery} onSearch={handleSearch} />
           </div>
           <nav className="shrink-0 w-full sm:w-auto flex justify-end">
             <Link
@@ -135,7 +152,7 @@ export const App = () => {
               to="/about"
             >
               <svg
-                className="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors"
+                className="w-4 h-4 text-slate-400"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
@@ -143,7 +160,6 @@ export const App = () => {
               >
                 <path
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  pathLength="1"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -153,41 +169,42 @@ export const App = () => {
           </nav>
         </div>
       </header>
+
       <div className="grow flex w-full max-w-[1400px] mx-auto overflow-hidden relative">
+        {isDetailsPanelOpen ? (
+          <button
+            aria-label="Close details"
+            className="absolute inset-0 z-10 bg-transparent block w-full h-full cursor-default"
+            type="button"
+            onClick={handleCloseDetails}
+          />
+        ) : null}
+
         <main
-          className={`grow transition-all duration-300 py-12 px-6 overflow-y-auto ${
-            isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'
-          }`}
+          className={`grow transition-all duration-300 py-12 px-6 overflow-y-auto z-0 ${isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'}`}
         >
-          <div className="max-w-5xl mx-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="max-w-5xl mx-auto">
             {error && !isLoading ? (
-              <ErrorMessage message={error} onRetry={() => loadBooks(searchQuery, currentPage)} />
+              <ErrorMessage message={error} onRetry={() => loadBooks(currentQuery, currentPage)} />
             ) : null}
 
             {isLoading ? (
-              <Loader query={searchQuery} />
+              <Loader query={currentQuery} />
             ) : (
               <>
                 {!error && books.length > 0 ? (
                   <div className="mb-8 flex justify-center">
-                    <Pagination current={currentPage} total={totalPages} onPageChange={handlePageChange} />
+                    <Pagination current={currentPage} total={totalPages} />
                   </div>
                 ) : null}
-                <BookList
-                  books={books}
-                  hasError={!!error}
-                  onBookSelect={(book) => {
-                    console.log('click');
-                    handleBookSelect(book.id);
-                  }}
-                />
+                <BookList books={books} hasError={!!error} onBookSelect={(book) => handleBookSelect(book.id)} />
               </>
             )}
           </div>
         </main>
 
         {isDetailsPanelOpen ? (
-          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-80px)] sticky top-[80px] z-20 shrink-0">
+          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-80px)] sticky top-[80px] z-20 shrink-0 border-l border-zinc-100 bg-white">
             <Outlet />
           </aside>
         ) : null}
