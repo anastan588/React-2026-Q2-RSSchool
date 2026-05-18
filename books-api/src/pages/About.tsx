@@ -17,24 +17,11 @@ export const About = () => {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-indigo-600 hover:text-indigo-800 font-bold transition-colors group"
             >
-              <span>Anastasiya (anastan588)</span>
-              <svg
-                className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
+              <span>Anastasiya Andronava (anastan588)</span>
             </a>
           </p>
           <p className="text-zinc-500 text-sm leading-relaxed">
-            This book searching app interacts dynamically with the Open Library Open API.
+            This book searching app interacts with the Open Library API.
           </p>
         </section>
 

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
-import neutralBookImage from '@/assets/mock-book.jpg';
 import Button from '@/components/Button';
 import Loader from '@/components/Loader';
 import { fetchBookDetails } from '@/services/BooksService';
 import type { ExtendedBook } from '@/types/types';
+
+const neutralBookImage = new URL('@/assets/mock-book.jpg', import.meta.url).href;
 
 export const BookDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,8 +38,8 @@ export const BookDetails = () => {
   }, [id]);
 
   const handleClose = () => {
-    const page = searchParams.get('page');
-    navigate(page ? `/?page=${page}` : '/');
+    const currentSearch = searchParams.toString();
+    navigate(currentSearch ? `/?${currentSearch}` : '/');
   };
 
   if (isLoading) {
@@ -60,7 +61,7 @@ export const BookDetails = () => {
     );
   }
 
-  const displayCover = !book.cover ? neutralBookImage : book.cover;
+  const displayCover = !book.cover || book.cover.includes('mock-book.jpg') ? neutralBookImage : book.cover;
 
   return (
     <div className="h-full flex flex-col bg-white border-l border-zinc-200 shadow-xl animate-in slide-in-from-right duration-200">
