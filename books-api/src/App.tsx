@@ -84,8 +84,6 @@ export const App: React.FC = () => {
       if (!hasQuery && initialQuery) {
         nextParams.set('q', initialQuery);
       }
-
-      // Заменяем текущую запись в истории, чтобы в URL появился ?page=1
       setSearchParams(nextParams, { replace: true });
     }
   }, [searchParams, storagePage, initialQuery, setSearchParams]);
