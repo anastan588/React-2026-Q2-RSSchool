@@ -1,10 +1,26 @@
-import type { ReactNode } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
 
 export interface AppState {
   query: string;
   books: Book[];
   isLoading: boolean;
   error: string | null;
+}
+
+export interface ButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+  type?: 'button' | 'submit' | 'reset';
+  className?: string;
+  disabled?: boolean;
+}
+
+export interface InputProps {
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  type?: 'text' | 'search' | 'number';
+  className?: string;
 }
 
 export interface Book {
@@ -16,6 +32,23 @@ export interface Book {
   openLibraryUrl: string;
 }
 
+export interface SearchBooksResponse {
+  books: Book[];
+  totalPages: number;
+}
+
+export interface ExtendedBook {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  cover: string;
+  openLibraryUrl: string;
+  description: string;
+  publishDate: string;
+  places: string[];
+}
+
 export interface OpenLibraryDoc {
   key: string;
   title: string;
@@ -25,13 +58,14 @@ export interface OpenLibraryDoc {
   edition_key?: string[];
 }
 
-export interface BookItemState {
-  hasError: boolean;
+export interface BookItemProps {
+  book: Book;
 }
 
 export interface BookListProps {
   books: Book[];
   hasError: boolean;
+  onBookSelect?: (book: Book) => void;
 }
 
 export interface LoaderProps {
@@ -68,4 +102,18 @@ export interface StateErrorButton {
 export interface ErrorMessageProps {
   message: string;
   onRetry: () => void;
+}
+
+//LocalStorage
+
+export interface StorageState {
+  query: string;
+  page: number;
+}
+
+//Pangination
+export interface PaginationProps {
+  current: number;
+  total: number;
+  onPageChange: (page: number) => void;
 }

@@ -1,98 +1,170 @@
-import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
-import BookService from '@/services/BooksService';
-import StorageService from '@/services/StorageService';
-import type { Book } from '@/types/types';
+import { searchBooks } from '@/services/BooksService';
+import type { Book, SearchBooksResponse } from '@/types/types';
 
-vi.mock('@/services/BooksService');
-vi.mock('@/services/StorageService');
+const createMockStorage = (initialQuery = '', initialPage = 1) => {
+  const state = {
+    searchQuery: initialQuery,
+    storagePage: initialPage,
+  };
+  return {
+    state,
+    setSearchQuery: vi.fn((q: string) => {
+      state.searchQuery = q;
+    }),
+    setStoragePage: vi.fn((p: number) => {
+      state.storagePage = p;
+    }),
+    clearSearch: vi.fn(() => {
+      state.searchQuery = '';
+      state.storagePage = 1;
+    }),
+  };
+};
+
+let mockStorageInstance = createMockStorage();
+
+vi.mock('@/services/BooksService', () => ({
+  searchBooks: vi.fn(),
+}));
+
+vi.mock('@/hooks/StorageHook', () => ({
+  default: () => ({
+    searchQuery: mockStorageInstance.state.searchQuery,
+    storagePage: mockStorageInstance.state.storagePage,
+    setSearchQuery: mockStorageInstance.setSearchQuery,
+    setStoragePage: mockStorageInstance.setStoragePage,
+    clearSearch: mockStorageInstance.clearSearch,
+  }),
+}));
 
 vi.mock('@/components/BookList', () => ({
-  default: class MockBookList extends React.Component<{ books: Book[] }> {
-    render() {
-      const { books } = this.props;
-      return <div data-testid="book-list">Books count: {books.length}</div>;
-    }
-  },
+  default: ({ books }: { books: Book[] }) => <div data-testid="book-list">Books count: {books.length}</div>,
 }));
 
 vi.mock('@/components/Loader', () => ({
-  default: class MockLoader extends React.Component<{ query: string }> {
-    render() {
-      const { query } = this.props;
-      return <div data-testid="loader">Loading {query}</div>;
-    }
-  },
+  default: ({ query }: { query: string }) => <div data-testid="loader">Loading {query}</div>,
+}));
+
+vi.mock('@/components/Pagination', () => ({
+  default: ({
+    current,
+    total,
+    onPageChange,
+  }: {
+    current: number;
+    total: number;
+    onPageChange: (p: number) => void;
+  }) => (
+    <div data-testid="pagination-controls">
+      <button data-testid="prev-btn" type="button" onClick={() => onPageChange(current - 1)}>
+        Prev
+      </button>
+      <span data-testid="page-info">
+        Page {current} of {total}
+      </span>
+      <button data-testid="next-btn" type="button" onClick={() => onPageChange(current + 1)}>
+        Next
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/ErrorMessage', () => ({
-  default: class MockErrorMessage extends React.Component<{
-    message: string;
-    onRetry: () => void;
-  }> {
-    render() {
-      const { message, onRetry } = this.props;
-      return (
-        <div data-testid="error-message">
-          <p>{message}</p>
-          <button type="button" onClick={onRetry}>
-            Retry
-          </button>
-        </div>
-      );
-    }
-  },
+  default: ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+    <div data-testid="error-message">
+      <p>{message}</p>
+      <button type="button" onClick={onRetry}>
+        Retry
+      </button>
+    </div>
+  ),
 }));
 
 vi.mock('@/components/SearchField', () => ({
-  default: class MockSearchField extends React.Component<{ onSearch: (v: string) => void; initialValue: string }> {
-    render() {
-      const { onSearch, initialValue } = this.props;
-      return (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const input = e.currentTarget.elements.namedItem('search') as HTMLInputElement;
-            onSearch(input.value);
-          }}
-        >
-          <input data-testid="search-input" defaultValue={initialValue} name="search" />
-          <button type="submit">Search</button>
-        </form>
-      );
-    }
-  },
+  default: ({ onSearch, initialValue }: { onSearch: (v: string) => void; initialValue: string }) => (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        const input = e.currentTarget.elements.namedItem('search') as HTMLInputElement;
+        onSearch(input.value);
+      }}
+    >
+      <input data-testid="search-input" defaultValue={initialValue} name="search" />
+      <button type="submit">Search</button>
+    </form>
+  ),
 }));
 
 describe('App Component Integration', () => {
   const user = userEvent.setup();
+
   const mockBooks: Book[] = [
     { id: '1', title: 'Clean Code', author: 'Robert Martin', category: '', cover: '', openLibraryUrl: '' },
   ];
 
+  const mockResponse: SearchBooksResponse = {
+    books: mockBooks,
+    totalPages: 5,
+  };
+
+  const renderAppWithRouter = (initialPath = '/') => {
+    const router = createMemoryRouter(
+      [
+        {
+          path: '*',
+          element: <App />,
+          children: [
+            {
+              path: 'details/:id',
+              element: <div data-testid="details-content">Book Details Mock</div>,
+            },
+          ],
+        },
+      ],
+      {
+        initialEntries: [initialPath],
+        initialIndex: 0,
+      },
+    );
+
+    const renderResult = render(<RouterProvider router={router} />);
+
+    return {
+      ...renderResult,
+      router,
+    };
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue('');
-    vi.mocked(BookService.searchBooks).mockResolvedValue(mockBooks);
+
+    mockStorageInstance = createMockStorage('', 1);
+    vi.mocked(searchBooks).mockResolvedValue(mockResponse);
   });
 
-  it('reads from StorageService on mount and performs search', async () => {
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue('Tolkien');
+  it('reads from useSearchStorage hook on mount and performs search', async () => {
+    mockStorageInstance = createMockStorage('Tolkien', 1);
 
-    render(<App />);
+    renderAppWithRouter();
 
-    expect(StorageService.getSearchQuery).toHaveBeenCalled();
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('Tolkien', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('Tolkien', { page: 1 });
     });
   });
 
-  it('updates StorageService and fetches books on valid search', async () => {
-    render(<App />);
+  it('updates state via hook and fetches books on valid search execution', async () => {
+    renderAppWithRouter();
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
@@ -100,122 +172,235 @@ describe('App Component Integration', () => {
     await user.type(input, 'Orwell');
     await user.click(button);
 
-    expect(StorageService.setSearchQuery).toHaveBeenCalledWith('Orwell');
+    expect(mockStorageInstance.setSearchQuery).toHaveBeenCalledWith('Orwell');
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('Orwell', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('Orwell', { page: 1 });
     });
   });
 
-  it('prevents search and storage update if query is < 3 characters', async () => {
-    render(<App />);
+  it('prevents search execution and hook updates if the query is under 3 characters', async () => {
+    renderAppWithRouter();
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
     await user.clear(input);
     await user.type(input, 'Ab');
     await user.click(button);
-    expect(StorageService.setSearchQuery).not.toHaveBeenCalledWith('Ab');
+
+    expect(mockStorageInstance.setSearchQuery).not.toHaveBeenCalled();
   });
 
-  it('renders ErrorMessage and handles retry', async () => {
+  it('renders ErrorMessage and triggers data reload upon clicking retry', async () => {
     const errorMsg = 'API Failure';
-    vi.mocked(BookService.searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce(mockBooks);
+    vi.mocked(searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce(mockResponse);
 
-    render(<App />);
+    renderAppWithRouter();
+
     const errorDisplay = await screen.findByText(errorMsg);
     expect(errorDisplay).toBeInTheDocument();
+
     const retryBtn = screen.getByRole('button', { name: /retry/i });
     await user.click(retryBtn);
+
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
+      expect(searchBooks).toHaveBeenCalledTimes(2);
     });
   });
 
-  it('prevents duplicate searches for the same query', async () => {
-    render(<App />);
+  it('prevents duplicated data requests for unmutated search queries', async () => {
+    renderAppWithRouter();
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
+
+    await user.clear(input);
     await user.type(input, 'React');
     await user.click(button);
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
+    });
+
     await user.click(button);
-    expect(BookService.searchBooks).toHaveBeenCalledTimes(2);
+
+    expect(searchBooks).toHaveBeenCalledTimes(2);
   });
 
-  it('verifies that the component reads the correct value from localStorage on mount', async () => {
-    const storedQuery = 'Agatha';
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue(storedQuery);
+  it('covers fallbacks when the local storage hook contains an empty string', async () => {
+    renderAppWithRouter();
 
-    render(<App />);
-
-    expect(StorageService.getSearchQuery).toHaveBeenCalled();
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith(storedQuery, expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
     });
   });
 
-  it('verifies that the component writes to localStorage after a valid search', async () => {
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue('');
-    render(<App />);
+  it('ensures storage update actions do not alter layout visibility for invalid strings', async () => {
+    renderAppWithRouter();
 
-    const input = screen.getByTestId('search-input');
-    const button = screen.getByRole('button', { name: /search/i });
-    const newQuery = 'Harry';
-    await user.clear(input);
-    await user.type(input, newQuery);
-    await user.click(button);
-    expect(StorageService.setSearchQuery).toHaveBeenCalledWith(newQuery);
-  });
-
-  it('covers cases where localStorage is empty (default behavior)', async () => {
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue('');
-
-    render(<App />);
-    expect(StorageService.getSearchQuery).toHaveBeenCalled();
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith('', expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
     });
-  });
 
-  it('ensures localStorage update logic does not break component for invalid queries', async () => {
-    render(<App />);
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
     await user.clear(input);
     await user.type(input, 'Hi');
     await user.click(button);
-    expect(StorageService.setSearchQuery).not.toHaveBeenCalledWith('Hi');
+
+    expect(mockStorageInstance.setSearchQuery).not.toHaveBeenCalled();
     expect(screen.queryByTestId('loader') || screen.queryByTestId('book-list')).toBeInTheDocument();
   });
 
-  it('verifies localStorage is updated when search is cleared (0 characters)', async () => {
-    render(<App />);
+  it('clears state using hook parameters when search fields are cleared', async () => {
+    renderAppWithRouter();
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
+
+    await user.clear(input);
     await user.type(input, 'Valid Query');
     await user.click(button);
-    vi.clearAllMocks();
-    await user.clear(input);
-    expect(input).toHaveValue('');
-    await user.click(button);
+    expect(mockStorageInstance.setSearchQuery).toHaveBeenCalledWith('Valid Query');
+
     await waitFor(() => {
-      expect(StorageService.setSearchQuery).toHaveBeenCalledWith('');
+      expect(searchBooks).toHaveBeenCalledWith('Valid Query', { page: 1 });
+    });
+
+    await user.clear(input);
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(mockStorageInstance.setSearchQuery).toHaveBeenCalledWith('');
     });
   });
 
-  it('verifies that the component reads and applies the correct value when localStorage contains a value', async () => {
-    const existingQuery = 'JavaScript';
-    vi.mocked(StorageService.getSearchQuery).mockReturnValue(existingQuery);
-    vi.mocked(BookService.searchBooks).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve([]), 50)),
+  it('displays active loading elements matching the values derived from hook parameters', async () => {
+    mockStorageInstance = createMockStorage('JavaScript', 1);
+
+    vi.mocked(searchBooks).mockImplementation(
+      () => new Promise((resolve) => setTimeout(() => resolve(mockResponse), 10)),
     );
-    render(<App />);
+
+    renderAppWithRouter();
+
     const input = screen.getByTestId('search-input');
-    expect(input).toHaveValue(existingQuery);
+    expect(input).toHaveValue('JavaScript');
+
     const loader = await screen.findByTestId('loader');
-    expect(loader).toHaveTextContent(new RegExp(existingQuery, 'i'));
+    expect(loader).toHaveTextContent(/JavaScript/i);
+  });
+
+  it('handles plain array API responses and calculates totalPages correctly', async () => {
+    const mockArrayBooks: Book[] = Array.from({ length: 25 }, (_, i) => ({
+      id: String(i),
+      title: `Book ${i}`,
+      author: 'Author',
+      category: '',
+      cover: '',
+      openLibraryUrl: '',
+    }));
+
+    vi.mocked(searchBooks).mockResolvedValue(mockArrayBooks as never);
+
+    renderAppWithRouter();
+
+    const paginationInfo = await screen.findByText(/Page 1 of 3/i);
+    expect(paginationInfo).toBeInTheDocument();
+
+    const bookList = screen.getByTestId('book-list');
+    expect(bookList).toHaveTextContent('Books count: 25');
+  });
+
+  it('synchronizes the URL parameter on mount if storagePage is greater than 1 and URL parameter is missing', async () => {
+    mockStorageInstance = createMockStorage('', 3);
+    renderAppWithRouter('/');
+
     await waitFor(() => {
-      expect(BookService.searchBooks).toHaveBeenCalledWith(existingQuery, expect.any(Object));
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 3 });
     });
+
+    const paginationInfo = await screen.findByText(/Page 3 of 5/i);
+    expect(paginationInfo).toBeInTheDocument();
+  });
+
+  it('bypasses URL synchronization on mount if storagePage is equal to 1', async () => {
+    mockStorageInstance = createMockStorage('', 1);
+
+    renderAppWithRouter('/');
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
+    const paginationInfo = await screen.findByText(/Page 1 of 5/i);
+    expect(paginationInfo).toBeInTheDocument();
+  });
+  it('prevents redundant network requests if query and page parameters remain unchanged', async () => {
+    renderAppWithRouter();
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+    });
+
+    vi.mocked(searchBooks).mockClear();
+
+    const input = screen.getByTestId('search-input');
+    const button = screen.getByRole('button', { name: /search/i });
+
+    await user.clear(input);
+    await user.type(input, 'React');
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
+    });
+    expect(searchBooks).toHaveBeenCalledTimes(1);
+
+    vi.mocked(searchBooks).mockClear();
+
+    await user.click(button);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(searchBooks, 'Redundant API calls should be blocked by the reference guard').not.toHaveBeenCalled();
+  });
+
+  it('displays the 404 NotFound layout if the URL page query parameter is malformed', async () => {
+    renderAppWithRouter('/?page=2/145');
+    const heading = await screen.findByRole('heading', { name: /404/i });
+    const message = screen.getByText(/Page Not Found/i);
+
+    expect(heading).toBeInTheDocument();
+    expect(message).toBeInTheDocument();
+  });
+
+  it('successfully returns to main page and preserves all query params when closing details panel', async () => {
+    const user = userEvent.setup();
+    const { router } = renderAppWithRouter('/details/123?page=3&q=typescript');
+    expect(screen.getByTestId('details-content')).toBeInTheDocument();
+
+    const closeButton = screen.getByRole('button', { name: /close details/i });
+    expect(closeButton).toBeInTheDocument();
+
+    await user.click(closeButton);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+
+      expect(router.state.location.search).toContain('page=3');
+      expect(router.state.location.search).toContain('q=typescript');
+    });
+    expect(screen.queryByTestId('details-content')).not.toBeInTheDocument();
   });
 });

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 import BookList from '@/components/BookList';
@@ -49,10 +50,40 @@ describe('BookList Component', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('renders with the correct CSS class for the grid', () => {
-    render(<BookList books={mockBooks} hasError={false} />);
+  it('renders with the correct CSS class for the grid layout wrapper', () => {
+    render(<BookList books={mockBooks} hasError={false} onBookSelect={vi.fn()} />);
+    const grid = screen.getByTestId('book-grid');
 
-    const grid = screen.getByText('Book 1').parentElement;
+    expect(grid).toBeInTheDocument();
     expect(grid).toHaveClass('book-grid');
+  });
+
+  it('calls onBookSelect with the correct book object when a book item is clicked', async () => {
+    const user = userEvent.setup();
+    const mockOnBookSelect = vi.fn();
+
+    render(<BookList books={mockBooks} hasError={false} onBookSelect={mockOnBookSelect} />);
+
+    const firstBook = screen.getByText('Book 1');
+    await user.click(firstBook);
+    expect(mockOnBookSelect).toHaveBeenCalledTimes(1);
+    expect(mockOnBookSelect).toHaveBeenCalledWith(mockBooks[0]);
+  });
+
+  it('prevents event propagation upward when a book item is clicked', async () => {
+    const user = userEvent.setup();
+    const parentClickSpy = vi.fn();
+    const mockOnBookSelect = vi.fn();
+    render(
+      <div onClick={parentClickSpy}>
+        <BookList books={mockBooks} hasError={false} onBookSelect={mockOnBookSelect} />
+      </div>,
+    );
+
+    const secondBook = screen.getByText('Book 2');
+    await user.click(secondBook);
+    expect(mockOnBookSelect).toHaveBeenCalledTimes(1);
+    expect(mockOnBookSelect).toHaveBeenCalledWith(mockBooks[1]);
+    expect(parentClickSpy).not.toHaveBeenCalled();
   });
 });
