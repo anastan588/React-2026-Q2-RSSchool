@@ -117,3 +117,13 @@ export interface PaginationProps {
   total: number;
   onPageChange: (page: number) => void;
 }
+
+// State
+
+export interface SelectedState {
+  selectedBooks: Book[];
+}
+
+export interface BookSelectionCheckboxProps {
+  book: Book;
+}

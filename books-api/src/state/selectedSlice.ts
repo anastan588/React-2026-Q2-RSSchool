@@ -1,11 +1,7 @@
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { createSlice } from '@reduxjs/toolkit';
 
-import type { Book } from '@/types/types';
-
-export interface SelectedState {
-  selectedBooks: Book[];
-}
+import type { Book, SelectedState } from '@/types/types';
 
 const initialState: SelectedState = {
   selectedBooks: [],
