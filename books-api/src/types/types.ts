@@ -133,3 +133,17 @@ export interface GeneratedCsvData {
   url: string;
   fileName: string;
 }
+
+//Theme
+export type Theme = 'light' | 'dark';
+
+export interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+// Header
+export interface HeaderProps {
+  currentQuery: string;
+  handleSearch: (query: string) => void;
+}

@@ -15,21 +15,21 @@ export const Pagination = ({ current, total }: Omit<PaginationProps, 'onPageChan
   };
 
   return (
-    <div className="flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+    <div className="flex items-center gap-4 select-none" onClick={(e) => e.stopPropagation()}>
       <Button
-        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 disabled:opacity-40"
+        className="px-5 py-2.5 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 disabled:opacity-30 disabled:hover:bg-card/50 disabled:hover:text-foreground disabled:hover:border-border-custom disabled:cursor-not-allowed"
         disabled={current <= 1}
         onClick={() => handlePageChange(current - 1)}
       >
         Previous
       </Button>
 
-      <span className="text-sm font-semibold px-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl select-none">
+      <span className="text-sm font-bold px-5 py-2.5 bg-card/30 border border-border-custom text-foreground rounded-xl min-w-[120px] text-center shadow-xs backdrop-blur-xs transition-colors duration-300">
         Page {current} of {total}
       </span>
 
       <Button
-        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 disabled:opacity-40"
+        className="px-5 py-2.5 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 disabled:opacity-30 disabled:hover:bg-card/50 disabled:hover:text-foreground disabled:hover:border-border-custom disabled:cursor-not-allowed"
         disabled={current >= total}
         onClick={() => handlePageChange(current + 1)}
       >

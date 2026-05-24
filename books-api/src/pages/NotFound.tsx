@@ -10,24 +10,24 @@ export const NotFound = () => {
   const mainAppReturnUrl = storagePage > 1 ? `/?page=${storagePage}` : '/';
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-6 text-center">
-      <div className="max-w-md bg-white p-10 rounded-3xl border border-zinc-200 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-        <h1 className="text-7xl font-black text-slate-800 mb-4 tracking-tight">404</h1>
-        <p className="text-xl font-bold text-zinc-700 mb-2">Page Not Found</p>
-        <p className="text-zinc-500 text-sm mb-8 leading-relaxed">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-6 text-center transition-colors duration-500">
+      <div className="max-w-md bg-card/70 backdrop-blur-xl p-10 rounded-3xl border border-border-custom shadow-xl animate-in fade-in zoom-in-95 duration-300">
+        <h1 className="text-7xl font-black text-foreground mb-4 tracking-tight">404</h1>
+        <p className="text-xl font-bold text-foreground mb-2">Page Not Found</p>
+        <p className="text-muted text-sm mb-8 leading-relaxed">
           The page you are looking for does not exist or has been moved.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
-            className="px-6 py-3 text-sm bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition-all"
+            className="px-6 py-3 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 shadow-xs active:scale-98 cursor-pointer"
             onClick={() => navigate(-1)}
           >
             Go Back
           </Button>
 
-          <Link to={mainAppReturnUrl}>
-            <Button className="w-full sm:w-auto px-6 py-3 text-sm bg-slate-800 hover:bg-slate-900 text-white rounded-xl shadow-md transition-all">
+          <Link to={mainAppReturnUrl} className="w-full sm:w-auto">
+            <Button className="w-full px-6 py-3 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 shadow-xs hover:shadow-md active:scale-98 cursor-pointer">
               Return to Main App
             </Button>
           </Link>
