@@ -36,7 +36,7 @@ const BookItem = ({ book }: BookItemProps) => {
           <span className="category-tag text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full truncate">
             {category}
           </span>
-          <div className="flex items-center gap-1.5" title={`Select "${title}" to manage`}>
+          <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase group-hover:text-primary transition-colors duration-200">
               Select
             </span>

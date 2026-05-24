@@ -125,5 +125,5 @@ export interface SelectedState {
 }
 
 export interface BookSelectionCheckboxProps {
-  book: Book;
+  book: Book | ExtendedBook;
 }

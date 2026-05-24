@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
+import BookSelectionCheckbox from '@/components/BookSelect';
 import Button from '@/components/Button';
 import Loader from '@/components/Loader';
 import { fetchBookDetails } from '@/services/BooksService';
@@ -113,6 +114,12 @@ export const BookDetails = () => {
                 <span className="text-zinc-400 text-xs">Not Specified</span>
               )}
             </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase group-hover:text-primary transition-colors duration-200">
+              Select
+            </span>
+            <BookSelectionCheckbox book={book} />
           </div>
         </div>
 
