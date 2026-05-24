@@ -1,25 +1,43 @@
+import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import Button from '@/components/Button';
-import { downloadSelectedBooksAsCSV } from '@/services/CsvDownloadService';
+import { prepareCsvDownload } from '@/services/CsvDownloadService';
 import { clearBooks } from '@/state/selectedSlice';
 import type { RootState } from '@/state/store';
 
 export const SelectedBooksFlyout = () => {
   const dispatch = useDispatch();
 
+  const downloadRef = useRef<HTMLAnchorElement>(null);
+
   const selectedBooks = useSelector((state: RootState) => state.selectedReducer.selectedBooks);
+
+  const [csvData, setCsvData] = useState<{ url: string; fileName: string } | null>(null);
+
   const count = selectedBooks.length;
 
-  if (count === 0) return null;
+  useEffect(() => {
+    console.log(downloadRef.current);
+    if (csvData && downloadRef.current) {
+      downloadRef.current.click();
+      URL.revokeObjectURL(csvData.url);
+      setCsvData(null);
+    }
+  }, [csvData]);
 
   const handleUnselectAll = () => {
     dispatch(clearBooks());
   };
 
   const handleDownload = () => {
-    downloadSelectedBooksAsCSV(selectedBooks);
+    const data = prepareCsvDownload(selectedBooks);
+    if (data) {
+      setCsvData(data);
+    }
   };
+
+  if (count === 0) return null;
 
   return (
     <div
@@ -31,6 +49,13 @@ export const SelectedBooksFlyout = () => {
       "
       data-testid="selected-items-flyout"
     >
+      <a
+        ref={downloadRef}
+        href={csvData?.url || '#'}
+        download={csvData?.fileName || ''}
+        className="hidden"
+        aria-hidden="true"
+      />
       <div className="flex flex-col items-center text-center gap-3">
         <div className="flex flex-col items-center gap-1.5">
           <div

@@ -1,4 +1,4 @@
-import type { Book } from '@/types/types';
+import type { Book, GeneratedCsvData } from '@/types/types';
 
 const formatCSVField = (value: string | undefined | null): string => {
   if (!value) return '""';
@@ -9,9 +9,9 @@ const formatCSVField = (value: string | undefined | null): string => {
   return `"${cleanValue.replace(/"/g, '""')}"`;
 };
 
-export const downloadSelectedBooksAsCSV = (selectedBooks: Book[]): void => {
+export const prepareCsvDownload = (selectedBooks: Book[]): GeneratedCsvData | null => {
   const count = selectedBooks.length;
-  if (count === 0) return;
+  if (count === 0) return null;
   console.log(count);
 
   const headers = ['Book ID', 'Book Title', 'Author Name', 'Genre', 'App Details Link', 'Description'];
@@ -35,13 +35,9 @@ export const downloadSelectedBooksAsCSV = (selectedBooks: Book[]): void => {
   const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const fileName = `${count}_items.csv`;
-  const downloadAnchor = document.createElement('a');
-  downloadAnchor.href = url;
-  downloadAnchor.setAttribute('download', fileName);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  document.body.removeChild(downloadAnchor);
-  URL.revokeObjectURL(url);
+
+  return {
+    url: URL.createObjectURL(blob),
+    fileName: `${count}_items.csv`,
+  };
 };

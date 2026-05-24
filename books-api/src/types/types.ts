@@ -127,3 +127,9 @@ export interface SelectedState {
 export interface BookSelectionCheckboxProps {
   book: Book | ExtendedBook;
 }
+
+//Csv
+export interface GeneratedCsvData {
+  url: string;
+  fileName: string;
+}
