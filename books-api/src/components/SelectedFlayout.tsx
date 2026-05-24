@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from 'react-redux';
 
 import Button from '@/components/Button';
+import { downloadSelectedBooksAsCSV } from '@/services/CsvDownloadService';
 import { clearBooks } from '@/state/selectedSlice';
 import type { RootState } from '@/state/store';
 
@@ -16,7 +17,9 @@ export const SelectedBooksFlyout = () => {
     dispatch(clearBooks());
   };
 
-  const handleDownload = () => {};
+  const handleDownload = () => {
+    downloadSelectedBooksAsCSV(selectedBooks);
+  };
 
   return (
     <div
