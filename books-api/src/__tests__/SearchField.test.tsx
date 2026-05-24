@@ -57,9 +57,15 @@ describe('SearchField Component', () => {
 
   it('applies error classes to input when showError is true', () => {
     render(<SearchField initialValue="ab" onSearch={mockOnSearch} />);
-    fireEvent.submit(screen.getByRole('button').closest('form')!);
+
+    const form = screen.getByRole('button').closest('form');
+    if (form) fireEvent.submit(form);
 
     const input = screen.getByPlaceholderText(/Search by author/i);
-    expect(input).toHaveClass('border-red-500');
+
+    expect(input).toHaveClass('border-red-500/80');
+    expect(input).toHaveClass('ring-4');
+    expect(input).toHaveClass('ring-red-500/10');
+    expect(input).not.toHaveClass('focus:border-primary');
   });
 });

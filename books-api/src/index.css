@@ -73,7 +73,7 @@
   .search-bar {
     @apply w-full px-6 py-4 bg-card border border-border-custom rounded-2xl
            shadow-sm transition-all duration-300 outline-none
-           placeholder-muted placeholder-opacity-60
+           placeholder-muted/60
            focus:border-primary focus:ring-4 focus:ring-primary/10 focus:shadow-md;
   }
 

@@ -36,11 +36,11 @@ const SearchField = ({ initialValue, onSearch }: SearchFieldProps) => {
       <form className="flex gap-3" onSubmit={handleSubmit}>
         <div className="relative flex-1">
           <Input
-            className={`transition-all duration-300 backdrop-blur-md rounded-xl bg-card/80 text-foreground border-border-custom
-            placeholder:text-slate-500 dark:placeholder:text-white/70
-            focus:border-primary focus:ring-4 focus:ring-primary/10
-            ${showError ? 'border-red-500/80 ring-4 ring-red-500/10 text-red-600 dark:text-red-400 dark:border-red-500/50' : ''}
-            `}
+            className={`transition-all duration-300 backdrop-blur-md rounded-xl bg-card/80 text-foreground border-border-custom placeholder:text-slate-500 dark:placeholder:text-white/70 ${
+              showError
+                ? 'border-red-500/80 ring-4 ring-red-500/10 text-red-600 dark:text-red-400 dark:border-red-500/50'
+                : 'focus:border-primary focus:ring-4 focus:ring-primary/10'
+            }`}
             placeholder="Search by author (min 3 chars)..."
             type="text"
             value={localQuery}

@@ -1,11 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { configureStore } from '@reduxjs/toolkit';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import BookDetails from '@/pages/BookDetails';
 import { fetchBookDetails } from '@/services/BooksService';
-import type { ExtendedBook } from '@/types/types';
+import type { Book, ExtendedBook } from '@/types/types';
 
 vi.mock('@/services/BooksService', () => ({
   fetchBookDetails: vi.fn(),
@@ -15,9 +17,14 @@ vi.mock('@/components/Loader', () => ({
   default: ({ query }: { query: string }) => <div data-testid="loader">Mock Loading {query}</div>,
 }));
 
-describe('BookDetails Component', () => {
-  const user = userEvent.setup();
+const createMockStore = (initialValue: Book[] = []) =>
+  configureStore({
+    reducer: {
+      selectedReducer: () => ({ selectedBooks: initialValue }),
+    },
+  });
 
+describe('BookDetails Component', () => {
   const mockBookData: ExtendedBook = {
     id: 'OL27482W',
     title: 'The Hobbit',
@@ -30,7 +37,8 @@ describe('BookDetails Component', () => {
     places: ['Middle-earth', 'Rivendell'],
   };
 
-  const renderBookDetailsWithRouter = (initialEntries = ['/details/OL27482W']) => {
+  const renderBookDetailsWithRouter = (initialEntries = ['/details/OL27482W'], initialBooks: Book[] = []) => {
+    const store = createMockStore(initialBooks);
     const router = createMemoryRouter(
       [
         {
@@ -47,7 +55,12 @@ describe('BookDetails Component', () => {
 
     return {
       router,
-      ...render(<RouterProvider router={router} />),
+      store,
+      ...render(
+        <Provider store={store}>
+          <RouterProvider router={router} />
+        </Provider>,
+      ),
     };
   };
 
@@ -60,8 +73,7 @@ describe('BookDetails Component', () => {
 
     renderBookDetailsWithRouter();
 
-    const loader = screen.getByTestId('details-loader');
-    expect(loader).toBeInTheDocument();
+    expect(screen.getByTestId('details-loader')).toBeInTheDocument();
     expect(screen.getByTestId('loader')).toHaveTextContent(/book detailes/i);
   });
 
@@ -70,19 +82,19 @@ describe('BookDetails Component', () => {
 
     renderBookDetailsWithRouter();
 
-    expect(await screen.findByRole('heading', { name: 'The Hobbit' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Book Profile' })).toBeInTheDocument();
+    expect(screen.getByText('The Hobbit')).toBeInTheDocument();
     expect(screen.getByText('First Published: January 1938')).toBeInTheDocument();
     expect(screen.getByText(mockBookData.description)).toBeInTheDocument();
     expect(screen.getByText('Fantasy')).toBeInTheDocument();
-
     expect(screen.getByText('Middle-earth')).toBeInTheDocument();
     expect(screen.getByText('Rivendell')).toBeInTheDocument();
 
-    const link = screen.getByRole('link', { name: mockBookData.openLibraryUrl });
-    expect(link).toHaveAttribute('href', mockBookData.openLibraryUrl);
-
-    const coverImage = screen.getByRole('img', { name: 'The Hobbit' });
-    expect(coverImage).toHaveAttribute('src', mockBookData.cover);
+    expect(screen.getByRole('link', { name: mockBookData.openLibraryUrl })).toHaveAttribute(
+      'href',
+      mockBookData.openLibraryUrl,
+    );
+    expect(screen.getByRole('img', { name: 'The Hobbit' })).toHaveAttribute('src', mockBookData.cover);
   });
 
   it('displays "Not Specified" fallback layout if the places array data arrives empty', async () => {
@@ -119,24 +131,58 @@ describe('BookDetails Component', () => {
   });
 
   it('preserves the page parameter in the query string route when clicking the header close cross action', async () => {
+    const user = userEvent.setup();
     vi.mocked(fetchBookDetails).mockResolvedValue(mockBookData);
     const { router } = renderBookDetailsWithRouter(['/details/OL27482W?page=15']);
 
     const closeButton = await screen.findByRole('button', { name: /close details/i });
     await user.click(closeButton);
-    expect(router.state.location.pathname).toBe('/');
-    expect(router.state.location.search).toBe('?page=15');
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+      expect(router.state.location.search).toBe('?page=15');
+    });
   });
 
   it('falls back to structural root route if no historical page context parameters are available on close', async () => {
+    const user = userEvent.setup();
     vi.mocked(fetchBookDetails).mockResolvedValue(mockBookData);
-
     const { router } = renderBookDetailsWithRouter(['/details/OL27482W']);
 
     const closeButton = await screen.findByRole('button', { name: /close details/i });
     await user.click(closeButton);
 
-    expect(router.state.location.pathname).toBe('/');
-    expect(router.state.location.search).toBe('');
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/');
+      expect(router.state.location.search).toBe('');
+    });
+  });
+
+  it('renders selection checkbox inside panel linked with specific book state', async () => {
+    vi.mocked(fetchBookDetails).mockResolvedValue(mockBookData);
+
+    renderBookDetailsWithRouter(['/details/OL27482W']);
+
+    const checkbox = await screen.findByRole('checkbox', { name: new RegExp(`select ${mockBookData.title}`, 'i') });
+    expect(checkbox).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
+  });
+
+  it('reflects correct check status if book is pre-selected in data store parameters', async () => {
+    vi.mocked(fetchBookDetails).mockResolvedValue(mockBookData);
+
+    const existingBook: Book = {
+      id: mockBookData.id,
+      title: mockBookData.title,
+      author: mockBookData.author,
+      category: mockBookData.category,
+      cover: mockBookData.cover,
+      openLibraryUrl: mockBookData.openLibraryUrl,
+    };
+
+    renderBookDetailsWithRouter(['/details/OL27482W'], [existingBook]);
+
+    const checkbox = await screen.findByRole('checkbox', { name: new RegExp(`select ${mockBookData.title}`, 'i') });
+    expect(checkbox).toBeChecked();
   });
 });
