@@ -9,6 +9,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
 import Pagination from '@/components/Pangination';
 import SearchField from '@/components/SearchField';
+import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
 import { searchBooks } from '@/services/BooksService';
@@ -139,6 +140,7 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <SelectedBooksFlyout />
       <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="grow w-full">
