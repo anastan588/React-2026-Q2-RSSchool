@@ -1,111 +1,164 @@
 @import 'tailwindcss';
 
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --bg: #f8fafc;
+  --fg: #0f172a;
+  --accent: #6366f1;
+  --accent-soft: rgba(99, 102, 241, 0.08);
+  --muted: #64748b;
+  --border: rgba(226, 232, 240, 0.8);
+  --card-bg: rgba(255, 255, 255, 0.75);
+  --radius-book: 2px 12px 12px 2px;
+  --shadow-book: 0 10px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+}
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+.dark {
+  --bg: #0d131f;
+  --fg: #f0f4f8;
+  --muted: #64748b;
+  --border: rgba(147, 197, 253, 0.1);
+  --card-bg: rgba(23, 32, 51, 0.6);
+  --accent: #60a5fa;
+  --accent-soft: rgba(96, 165, 250, 0.12);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+  :root:not(.light) {
+    --bg: #0d131f;
+    --fg: #f0f4f8;
+    --muted: #64748b;
+    --border: rgba(147, 197, 253, 0.1);
+    --card-bg: rgba(23, 32, 51, 0.6);
+    --accent: #60a5fa;
+    --accent-soft: rgba(96, 165, 250, 0.12);
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+@theme {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted);
+  --color-border-custom: var(--border);
+  --color-card: var(--card-bg);
+  --radius-book: var(--radius-book);
+  --shadow-book: var(--shadow-book);
 }
 
-body {
-  margin: 0;
-}
+@layer base {
+  html,
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow, backdrop-filter;
+    transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+    transition-duration: 400ms;
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
+
+@layer components {
+  .app-container {
+    @apply max-w-6xl mx-auto px-4 py-8;
   }
-}
-p {
-  margin: 0;
-}
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+  .search-bar {
+    @apply w-full px-6 py-4 bg-card border border-border-custom rounded-2xl
+           shadow-sm transition-all duration-300 outline-none
+           placeholder-muted/60
+           focus:border-primary focus:ring-4 focus:ring-primary/10 focus:shadow-md;
+  }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+  .btn-primary {
+    cursor: pointer !important;
+
+    @apply relative px-8 py-4 font-bold rounded-2xl overflow-hidden select-none
+           border border-white/10 text-white
+           transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)];
+
+    background: linear-gradient(135deg, var(--accent) 0%, rgba(79, 70, 229, 0.9) 100%);
+
+    box-shadow:
+      0 4px 14px -1px rgba(99, 102, 241, 0.3),
+      inset 0 1px 1px rgba(255, 255, 255, 0.25);
+
+    &:hover {
+      @apply -translate-y-0.5 text-white;
+
+      background: linear-gradient(35deg, var(--accent) 0%, #f3f4f6 100%);
+
+      box-shadow:
+        0 10px 22px -4px rgba(99, 102, 241, 0.45),
+        inset 0 1px 2px rgba(255, 255, 255, 0.35);
+    }
+
+    &:active {
+      @apply translate-y-0 scale-98;
+      filter: brightness(0.92);
+      box-shadow:
+        0 2px 6px -1px rgba(99, 102, 241, 0.2),
+        inset 0 2px 4px rgba(0, 0, 0, 0.15);
+    }
+
+    &:disabled {
+      @apply text-muted-foreground/60 border-transparent shadow-none cursor-not-allowed pointer-events-none;
+      background: var(--muted) !important;
+      opacity: 0.25;
+    }
+
+    &::before {
+      content: '';
+      @apply absolute inset-0 bg-gradient-to-b from-white/15 to-transparent pointer-events-none;
+    }
+  }
+
+  .book-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-12;
+  }
+
+  .book-item {
+    @apply flex flex-col gap-3 cursor-pointer;
+
+    &:hover .book-cover-wrapper {
+      @apply -translate-y-1.5 shadow-xl;
+    }
+
+    &:hover .book-title {
+      @apply text-primary;
+    }
+  }
+
+  .book-cover-wrapper {
+    @apply relative aspect-2/3 overflow-hidden rounded-book
+           shadow-book transition-transform duration-500 ease-out;
+  }
+
+  .book-cover-img {
+    @apply w-full h-full object-contain;
+  }
+
+  .book-spine {
+    @apply absolute inset-y-0 left-0 w-2 bg-black/10 backdrop-blur-[1px] border-r border-white/10;
+  }
+
+  .book-title {
+    @apply text-lg font-medium leading-tight text-foreground transition-colors line-clamp-2;
+  }
+
+  .book-author {
+    @apply text-sm text-muted;
+  }
+
+  .category-tag {
+    @apply px-2.5 py-1 text-[10px] uppercase tracking-wider font-bold 
+           bg-accent-soft text-primary rounded-md w-fit transition-colors duration-300;
+  }
 }
