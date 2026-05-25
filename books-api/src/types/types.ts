@@ -117,3 +117,33 @@ export interface PaginationProps {
   total: number;
   onPageChange: (page: number) => void;
 }
+
+// State
+
+export interface SelectedState {
+  selectedBooks: Book[];
+}
+
+export interface BookSelectionCheckboxProps {
+  book: Book | ExtendedBook;
+}
+
+//Csv
+export interface GeneratedCsvData {
+  url: string;
+  fileName: string;
+}
+
+//Theme
+export type Theme = 'light' | 'dark';
+
+export interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+// Header
+export interface HeaderProps {
+  currentQuery: string;
+  handleSearch: (query: string) => void;
+}

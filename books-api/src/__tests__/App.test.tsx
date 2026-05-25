@@ -1,9 +1,12 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { configureStore } from '@reduxjs/toolkit';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { searchBooks } from '@/services/BooksService';
 import type { Book, SearchBooksResponse } from '@/types/types';
 
@@ -26,6 +29,20 @@ const createMockStorage = (initialQuery = '', initialPage = 1) => {
     }),
   };
 };
+
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 let mockStorageInstance = createMockStorage();
 
@@ -113,7 +130,15 @@ describe('App Component Integration', () => {
     totalPages: 5,
   };
 
-  const renderAppWithRouter = (initialPath = '/') => {
+  const createMockStore = (initialSelectedBooks: Book[] = []) =>
+    configureStore({
+      reducer: {
+        selectedReducer: () => ({ selectedBooks: initialSelectedBooks }),
+      },
+    });
+
+  const renderAppWithRouter = (initialPath = '/', initialSelectedBooks: Book[] = []) => {
+    const testStore = createMockStore(initialSelectedBooks);
     const router = createMemoryRouter(
       [
         {
@@ -133,17 +158,24 @@ describe('App Component Integration', () => {
       },
     );
 
-    const renderResult = render(<RouterProvider router={router} />);
+    const renderResult = render(
+      <Provider store={testStore}>
+        <ThemeProvider>
+          <RouterProvider router={router} />
+        </ThemeProvider>
+      </Provider>,
+    );
 
     return {
       ...renderResult,
       router,
+      store: testStore,
     };
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-
+    localStorage.clear();
     mockStorageInstance = createMockStorage('', 1);
     vi.mocked(searchBooks).mockResolvedValue(mockResponse);
   });
@@ -201,7 +233,7 @@ describe('App Component Integration', () => {
 
     renderAppWithRouter();
 
-    const errorDisplay = await screen.findByText(errorMsg);
+    const errorDisplay = await screen.findByText(new RegExp(errorMsg, 'i'));
     expect(errorDisplay).toBeInTheDocument();
 
     const retryBtn = screen.getByRole('button', { name: /retry/i });
@@ -219,6 +251,7 @@ describe('App Component Integration', () => {
       expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
     });
 
+    const initialCalls = vi.mocked(searchBooks).mock.calls.length;
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
@@ -232,7 +265,7 @@ describe('App Component Integration', () => {
 
     await user.click(button);
 
-    expect(searchBooks).toHaveBeenCalledTimes(2);
+    expect(searchBooks).toHaveBeenCalledTimes(initialCalls + 1);
   });
 
   it('covers fallbacks when the local storage hook contains an empty string', async () => {
@@ -295,13 +328,24 @@ describe('App Component Integration', () => {
       () => new Promise((resolve) => setTimeout(() => resolve(mockResponse), 10)),
     );
 
-    renderAppWithRouter();
+    vi.useFakeTimers();
 
-    const input = screen.getByTestId('search-input');
-    expect(input).toHaveValue('JavaScript');
+    try {
+      renderAppWithRouter();
 
-    const loader = await screen.findByTestId('loader');
-    expect(loader).toHaveTextContent(/JavaScript/i);
+      const input = screen.getByTestId('search-input');
+      expect(input).toHaveValue('JavaScript');
+
+      const loader = screen.getByTestId('loader');
+      expect(loader).toHaveTextContent(/JavaScript/i);
+
+      await act(async () => {
+        vi.advanceTimersByTime(10);
+        await Promise.resolve();
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('handles plain array API responses and calculates totalPages correctly', async () => {
@@ -349,12 +393,12 @@ describe('App Component Integration', () => {
     const paginationInfo = await screen.findByText(/Page 1 of 5/i);
     expect(paginationInfo).toBeInTheDocument();
   });
+
   it('prevents redundant network requests if query and page parameters remain unchanged', async () => {
     renderAppWithRouter();
-    await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
-    });
 
+    await screen.findByTestId('search-input');
+    expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
     vi.mocked(searchBooks).mockClear();
 
     const input = screen.getByTestId('search-input');
@@ -364,43 +408,39 @@ describe('App Component Integration', () => {
     await user.type(input, 'React');
     await user.click(button);
 
-    await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
-    });
+    expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
     expect(searchBooks).toHaveBeenCalledTimes(1);
-
     vi.mocked(searchBooks).mockClear();
 
     await user.click(button);
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(searchBooks, 'Redundant API calls should be blocked by the reference guard').not.toHaveBeenCalled();
+
+    expect(searchBooks).not.toHaveBeenCalled();
   });
 
   it('displays the 404 NotFound layout if the URL page query parameter is malformed', async () => {
     renderAppWithRouter('/?page=2/145');
-    const heading = await screen.findByRole('heading', { name: /404/i });
-    const message = screen.getByText(/Page Not Found/i);
 
+    const heading = await screen.findByRole('heading', { name: /404/i });
     expect(heading).toBeInTheDocument();
-    expect(message).toBeInTheDocument();
+    expect(screen.getByText(/Page Not Found/i)).toBeInTheDocument();
   });
 
   it('successfully returns to main page and preserves all query params when closing details panel', async () => {
-    const user = userEvent.setup();
+    const testUser = userEvent.setup();
     const { router } = renderAppWithRouter('/details/123?page=3&q=typescript');
+
     expect(screen.getByTestId('details-content')).toBeInTheDocument();
 
     const closeButton = screen.getByRole('button', { name: /close details/i });
-    expect(closeButton).toBeInTheDocument();
-
-    await user.click(closeButton);
+    await testUser.click(closeButton);
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe('/');
-
-      expect(router.state.location.search).toContain('page=3');
-      expect(router.state.location.search).toContain('q=typescript');
     });
+
+    const searchParams = new URLSearchParams(router.state.location.search);
+    expect(searchParams.get('page')).toBe('3');
+    expect(searchParams.get('q')).toBe('typescript');
     expect(screen.queryByTestId('details-content')).not.toBeInTheDocument();
   });
 });

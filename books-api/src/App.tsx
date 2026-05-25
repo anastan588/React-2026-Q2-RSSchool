@@ -1,14 +1,15 @@
 import './App.css';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
 import ErrorButton from '@/components/ErrorButton';
 import ErrorMessage from '@/components/ErrorMessage';
+import Header from '@/components/Header';
 import Loader from '@/components/Loader';
 import Pagination from '@/components/Pangination';
-import SearchField from '@/components/SearchField';
+import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
 import { searchBooks } from '@/services/BooksService';
@@ -138,35 +139,25 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-slate-50 border-b border-zinc-200 py-6 px-6">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="grow w-full">
-            <SearchField initialValue={currentQuery} onSearch={handleSearch} />
-          </div>
-          <nav className="shrink-0 w-full sm:w-auto flex justify-end">
-            <Link
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-zinc-200 rounded-xl shadow-xs transition-all duration-200 ease-in-out hover:bg-slate-50 hover:text-slate-900 hover:border-zinc-300 hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-200 active:scale-98"
-              to="/about"
-            >
-              <span>About the App</span>
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <div className="grow flex w-full max-w-[1400px] mx-auto overflow-hidden relative">
+    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500 relative">
+      <SelectedBooksFlyout />
+      <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <ErrorButton />
+      </div>
+      <Header currentQuery={currentQuery} handleSearch={handleSearch} />
+      <div className="grow flex w-full max-w-[1400px] mx-auto relative">
         {isDetailsPanelOpen ? (
           <button
             aria-label="Close details"
-            className="absolute inset-0 z-10 bg-transparent block w-full h-full cursor-default"
+            className="absolute inset-0 z-10 bg-black/5 dark:bg-black/20 backdrop-blur-xs block w-full h-full cursor-default transition-all duration-300 animate-in fade-in"
             type="button"
             onClick={handleCloseDetails}
           />
         ) : null}
-
         <main
-          className={`grow transition-all duration-300 py-12 px-6 overflow-y-auto z-0 ${isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'}`}
+          className={`grow transition-all duration-500 py-12 px-6 z-0 ${
+            isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'
+          }`}
         >
           <div className="max-w-5xl mx-auto">
             {error && !isLoading ? (
@@ -187,17 +178,13 @@ export const App: React.FC = () => {
             )}
           </div>
         </main>
-
         {isDetailsPanelOpen ? (
-          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-80px)] sticky top-[80px] z-20 shrink-0 border-l border-zinc-100 bg-white">
+          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-88px)] sticky top-[88px] z-20 shrink-0 border-l border-border-custom bg-card/90 backdrop-blur-xl transition-all duration-300 shadow-2xl animate-in slide-in-from-right duration-300">
             <Outlet />
           </aside>
         ) : null}
       </div>
-
-      <footer className="py-10 bg-white border-t border-zinc-100 flex justify-center">
-        <ErrorButton />
-      </footer>
+      <footer className="py-10 bg-card/40 border-t border-border-custom flex justify-center backdrop-blur-xs transition-colors duration-300" />
     </div>
   );
 };
