@@ -11,7 +11,7 @@ export const ThemeToggle = () => {
       onClick={toggleTheme}
     >
       <span className="uppercase tracking-wider font-black text-current">
-        {theme === 'light' ? 'Light theme' : 'Dark theme'}
+        {theme === 'light' ? 'Dark theme' : 'Light theme'}
       </span>
     </Button>
   );
