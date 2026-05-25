@@ -89,9 +89,6 @@ export const BookDetails = () => {
 
         <div className="flex flex-col gap-1 text-left">
           <h3 className="text-xl font-black text-foreground leading-tight">{book.title}</h3>
-          <p className="text-sm font-semibold text-primary transition-colors duration-300">
-            First Published: {book.publishDate}
-          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -126,8 +123,8 @@ export const BookDetails = () => {
         </div>
         <div className="flex items-center justify-between p-4 rounded-xl border border-border-custom bg-card/30 backdrop-blur-xs transition-all duration-300">
           <div className="flex flex-col text-left">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted">Dashboard Status</span>
-            <span className="text-[11px] font-medium text-muted-foreground mt-0.5">Toggle list persistence state</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted">Status</span>
+            <span className="text-[11px] font-medium text-muted-foreground mt-0.5">Toggle selected state</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold tracking-wider text-muted uppercase">Select</span>

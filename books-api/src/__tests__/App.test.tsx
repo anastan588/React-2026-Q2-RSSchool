@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -339,7 +339,10 @@ describe('App Component Integration', () => {
       const loader = screen.getByTestId('loader');
       expect(loader).toHaveTextContent(/JavaScript/i);
 
-      vi.advanceTimersByTime(10);
+      await act(async () => {
+        vi.advanceTimersByTime(10);
+        await Promise.resolve();
+      });
     } finally {
       vi.useRealTimers();
     }

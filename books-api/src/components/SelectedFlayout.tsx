@@ -18,7 +18,6 @@ export const SelectedBooksFlyout = () => {
   const count = selectedBooks.length;
 
   useEffect(() => {
-    console.log(downloadRef.current);
     if (csvData && downloadRef.current) {
       downloadRef.current.click();
       URL.revokeObjectURL(csvData.url);
@@ -42,7 +41,7 @@ export const SelectedBooksFlyout = () => {
   return (
     <div
       className="
-        fixed top-6 right-6 z-50 w-36 p-3 rounded-xl border backdrop-blur-md transition-all duration-300
+        fixed bottom-6 left-6 z-50 w-36 p-3 rounded-xl border backdrop-blur-md transition-all duration-300
         animate-in fade-in slide-in-from-top-4
         bg-card/90 border-border-custom text-foreground shadow-xl
       "
@@ -66,7 +65,7 @@ export const SelectedBooksFlyout = () => {
             {count}
           </div>
           <p className="text-xs font-bold text-muted transition-colors duration-300">
-            {count === 1 ? 'item selected' : 'items selected'}
+            {count === 1 ? 'book selected' : 'books selected'}
           </p>
         </div>
 
@@ -83,7 +82,7 @@ export const SelectedBooksFlyout = () => {
 
           <Button
             className="
-              w-full flex items-center justify-center !border-0 text-[11px] font-black py-1.5 rounded-lg transition-colors cursor-pointer shadow-none after:hidden before:hidden
+              w-full flex items-center justify-center !border-0 text-[11px] text-white py-1.5 rounded-lg transition-colors cursor-pointer shadow-none after:hidden before:hidden
               !bg-transparent text-muted hover:text-black dark:hover:text-white
             "
             onClick={handleUnselectAll}

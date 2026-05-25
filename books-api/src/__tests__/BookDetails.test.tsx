@@ -84,7 +84,6 @@ describe('BookDetails Component', () => {
 
     expect(await screen.findByRole('heading', { name: 'Book Profile' })).toBeInTheDocument();
     expect(screen.getByText('The Hobbit')).toBeInTheDocument();
-    expect(screen.getByText('First Published: January 1938')).toBeInTheDocument();
     expect(screen.getByText(mockBookData.description)).toBeInTheDocument();
     expect(screen.getByText('Fantasy')).toBeInTheDocument();
     expect(screen.getByText('Middle-earth')).toBeInTheDocument();

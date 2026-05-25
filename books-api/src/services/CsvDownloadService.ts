@@ -12,7 +12,6 @@ const formatCSVField = (value: string | undefined | null): string => {
 export const prepareCsvDownload = (selectedBooks: Book[]): GeneratedCsvData | null => {
   const count = selectedBooks.length;
   if (count === 0) return null;
-  console.log(count);
 
   const headers = ['Book ID', 'Book Title', 'Author Name', 'Genre', 'App Details Link', 'Description'];
   const rows = selectedBooks.map((book) => {

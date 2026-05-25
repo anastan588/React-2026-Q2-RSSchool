@@ -68,14 +68,14 @@ describe('SelectedBooksFlyout Component', () => {
 
     expect(screen.getByTestId('selected-items-flyout')).toBeInTheDocument();
     expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('item selected')).toBeInTheDocument();
+    expect(screen.getByText('book selected')).toBeInTheDocument();
   });
 
   it('renders correct plural grammar description for multiple selected items', () => {
     renderWithProvider(mockBooks);
 
     expect(screen.getByText('2')).toBeInTheDocument();
-    expect(screen.getByText('items selected')).toBeInTheDocument();
+    expect(screen.getByText('books selected')).toBeInTheDocument();
   });
 
   it('dispatches clearBooks action sequence when unselect all action triggers', async () => {

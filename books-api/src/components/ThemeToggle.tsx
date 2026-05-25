@@ -11,7 +11,7 @@ export const ThemeToggle = () => {
       onClick={toggleTheme}
     >
       <span aria-hidden="true" className="text-sm leading-none transition-transform duration-300">
-        {theme === 'light' ? '🌙' : '☀️'}
+        {theme === 'light' ? '☀️' : '🌙'}
       </span>
       <span className="uppercase tracking-wider font-black text-current">{theme === 'light' ? 'Light' : 'Dark'}</span>
     </Button>

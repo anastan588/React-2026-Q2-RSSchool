@@ -27,7 +27,7 @@ describe('Main Entry Point', () => {
   it('renders the app inside strict composition hierarchy layout', async () => {
     document.body.innerHTML = '<div id="root"></div>';
 
-    await import(`../main?t=${Date.now()}`);
+    await vi.importActual('../main');
 
     const rootElement = document.getElementById('root');
     expect(createRoot).toHaveBeenCalledWith(rootElement);

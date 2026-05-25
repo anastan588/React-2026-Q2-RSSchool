@@ -93,7 +93,7 @@
     &:hover {
       @apply -translate-y-0.5 text-white;
 
-      background: linear-gradient(135deg, var(--accent) 40%, rgba(67, 56, 202, 1) 100%);
+      background: linear-gradient(35deg, var(--accent) 0%, #f3f4f6 100%);
 
       box-shadow:
         0 10px 22px -4px rgba(99, 102, 241, 0.45),
