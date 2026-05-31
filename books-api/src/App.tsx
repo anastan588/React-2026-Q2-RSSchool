@@ -150,27 +150,29 @@ export const App: React.FC = () => {
           }`}
         >
           <div className="max-w-5xl mx-auto">
-            {errorMessage && !isLoading ? <ErrorMessage message={errorMessage} onRetry={refetch} /> : null}
-
+            {errorMessage && !isLoading && !isFetching ? (
+              <ErrorMessage message={errorMessage} onRetry={refetch} />
+            ) : null}
             {isLoading || isFetching ? (
               <Loader query={currentQuery} />
             ) : (
-              <div
-                className={`transition-opacity duration-300 ${
-                  isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
-                }`}
-              >
-                {!errorMessage && books.length > 0 ? (
+              !errorMessage &&
+              books.length > 0 && (
+                <div
+                  className={`transition-opacity duration-300 ${
+                    isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
+                  }`}
+                >
                   <div className="mb-8 flex justify-center">
                     <Pagination current={currentPage} total={totalPages} />
                   </div>
-                ) : null}
-                <BookList
-                  books={books}
-                  hasError={!!errorMessage}
-                  onBookSelect={(book: Book) => handleBookSelect(book.id)}
-                />
-              </div>
+                  <BookList
+                    books={books}
+                    hasError={!!errorMessage}
+                    onBookSelect={(book: Book) => handleBookSelect(book.id)}
+                  />
+                </div>
+              )
             )}
           </div>
         </main>
