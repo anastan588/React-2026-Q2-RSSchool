@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
-import type { TypedUseSelectorHook } from 'react-redux'; // Добавлен тип
-import { useDispatch, useSelector } from 'react-redux'; // Добавлен импорт
+import type { TypedUseSelectorHook } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 import { booksApi } from '@/services/BooksService';
 import selectedReducer from '@/state/selectedSlice';

@@ -15,7 +15,8 @@ import RefreshCacheButton from '@/components/RefreshCacheButton';
 import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
-import { useSearchBooksQuery } from '@/services/BooksService';
+import { booksApi, useSearchBooksQuery } from '@/services/BooksService';
+import { useAppDispatch } from '@/state/store';
 import type { Book } from '@/types/types';
 
 export const App: React.FC = () => {
@@ -23,6 +24,7 @@ export const App: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useAppDispatch();
 
   const urlPageStr = searchParams.get('page');
   const urlQueryStr = searchParams.get('q');
@@ -33,7 +35,7 @@ export const App: React.FC = () => {
   const currentQuery = urlQueryStr !== null ? urlQueryStr : initialQuery;
   const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage > 1 ? storagePage : 1;
 
-  const { data, error, isLoading, refetch } = useSearchBooksQuery({
+  const { data, error, isLoading, isFetching, refetch } = useSearchBooksQuery({
     query: currentQuery,
     page: currentPage,
   });
@@ -116,6 +118,11 @@ export const App: React.FC = () => {
     }
   }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
 
+  const handleManualRefresh = (): void => {
+    // Явная очистка кэша заставляет стейт полностью обнулиться, гарантируя показ Loader
+    dispatch(booksApi.util.invalidateTags(['Books', 'BookDetails']));
+  };
+
   if (isInvalidPageParam) {
     return <NotFound />;
   }
@@ -123,7 +130,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500 relative">
       <SelectedBooksFlyout />
-      <RefreshCacheButton />
+      <RefreshCacheButton isFetching={isFetching} onRefresh={handleManualRefresh} />
       <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <ErrorButton />
       </div>
@@ -145,10 +152,14 @@ export const App: React.FC = () => {
           <div className="max-w-5xl mx-auto">
             {errorMessage && !isLoading ? <ErrorMessage message={errorMessage} onRetry={refetch} /> : null}
 
-            {isLoading ? (
+            {isLoading || isFetching ? (
               <Loader query={currentQuery} />
             ) : (
-              <>
+              <div
+                className={`transition-opacity duration-300 ${
+                  isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
+                }`}
+              >
                 {!errorMessage && books.length > 0 ? (
                   <div className="mb-8 flex justify-center">
                     <Pagination current={currentPage} total={totalPages} />
@@ -159,7 +170,7 @@ export const App: React.FC = () => {
                   hasError={!!errorMessage}
                   onBookSelect={(book: Book) => handleBookSelect(book.id)}
                 />
-              </>
+              </div>
             )}
           </div>
         </main>
