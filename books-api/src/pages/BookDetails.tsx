@@ -1,47 +1,54 @@
-import { useEffect, useState } from 'react';
+import React from 'react';
+import type { SerializedError } from '@reduxjs/toolkit';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 
 import BookSelectionCheckbox from '@/components/BookSelect';
 import Button from '@/components/Button';
 import Loader from '@/components/Loader';
-import { fetchBookDetails } from '@/services/BooksService';
-import type { ExtendedBook } from '@/types/types';
+import { useFetchBookDetailsQuery } from '@/services/BooksService';
 
 const neutralBookImage = new URL('@/assets/mock-book.jpg', import.meta.url).href;
 
-export const BookDetails = () => {
+export const BookDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const [book, setBook] = useState<ExtendedBook | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  // Декларативный запрос данных через RTK Query. Выполняется автоматически при наличии id.
+  const {
+    data: book,
+    error,
+    isLoading,
+  } = useFetchBookDetailsQuery(id ?? '', {
+    skip: !id, // Пропускаем запрос, если id по какой-то причине отсутствует
+  });
 
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchSingleBookDetails = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetchBookDetails(id);
-        setBook(response);
-      } catch (err: unknown) {
-        const errorMsg = err instanceof Error ? err.message : 'Failed to load book data profiles.';
-        setError(errorMsg);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSingleBookDetails();
-  }, [id]);
-
-  const handleClose = () => {
+  const handleClose = (): void => {
     const currentSearch = searchParams.toString();
     navigate(currentSearch ? `/?${currentSearch}` : '/');
   };
+
+  // Строгое извлечение текста ошибки без использования типа 'any'
+  const getErrorMessage = (): string | null => {
+    if (!error) return null;
+
+    if ('message' in error) {
+      const err = error as SerializedError;
+      return err.message ?? 'Failed to load book data profiles.';
+    }
+
+    if ('status' in error) {
+      const err = error as FetchBaseQueryError;
+      if (err.data && typeof err.data === 'object' && 'message' in err.data) {
+        return String((err.data as Record<string, unknown>).message);
+      }
+    }
+
+    return 'Failed to load book data profiles.';
+  };
+
+  const errorMessage = getErrorMessage();
 
   if (isLoading) {
     return (
@@ -51,10 +58,10 @@ export const BookDetails = () => {
     );
   }
 
-  if (error || !book) {
+  if (errorMessage || !book) {
     return (
       <div className="p-8 text-center text-red-500">
-        <p className="font-medium text-sm">{error || 'Book data record not located.'}</p>
+        <p className="font-medium text-sm">{errorMessage || 'Book data record not located.'}</p>
         <Button className="mt-4 px-4 py-2 bg-slate-800 text-white rounded-lg text-xs" onClick={handleClose}>
           Close Panel
         </Button>
@@ -121,6 +128,7 @@ export const BookDetails = () => {
             </div>
           </div>
         </div>
+
         <div className="flex items-center justify-between p-4 rounded-xl border border-border-custom bg-card/30 backdrop-blur-xs transition-all duration-300">
           <div className="flex flex-col text-left">
             <span className="text-xs font-bold uppercase tracking-wider text-muted">Status</span>

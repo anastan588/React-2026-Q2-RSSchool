@@ -1,6 +1,8 @@
 import './App.css';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect } from 'react';
+import type { SerializedError } from '@reduxjs/toolkit';
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
@@ -12,7 +14,7 @@ import Pagination from '@/components/Pangination';
 import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
-import { searchBooks } from '@/services/BooksService';
+import { useSearchBooksQuery } from '@/services/BooksService';
 import type { Book } from '@/types/types';
 
 export const App: React.FC = () => {
@@ -20,11 +22,6 @@ export const App: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalPages, setTotalPages] = useState<number>(1);
 
   const urlPageStr = searchParams.get('page');
   const urlQueryStr = searchParams.get('q');
@@ -35,41 +32,33 @@ export const App: React.FC = () => {
   const currentQuery = urlQueryStr !== null ? urlQueryStr : initialQuery;
   const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage > 1 ? storagePage : 1;
 
-  const lastAppliedState = useRef<{ query: string; page: number }>({
-    query: '',
-    page: 0,
+  const { data, error, isLoading, refetch } = useSearchBooksQuery({
+    query: currentQuery,
+    page: currentPage,
   });
 
-  const loadBooks = useCallback(async (query: string, page: number): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    lastAppliedState.current = { query, page };
+  const books = data?.books ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
-    try {
-      const response = await searchBooks(query, { page });
+  const getErrorMessage = (): string | null => {
+    if (!error) return null;
 
-      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
-        return;
-      }
-
-      if (Array.isArray(response)) {
-        setBooks(response);
-        setTotalPages(Math.ceil(response.length / 10) || 1);
-      } else {
-        setBooks(response.books || []);
-        setTotalPages(response.totalPages || 1);
-      }
-      setIsLoading(false);
-    } catch (err: unknown) {
-      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
-        return;
-      }
-      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMsg);
-      setIsLoading(false);
-      setBooks([]);
+    if ('message' in error) {
+      const err = error as SerializedError;
+      return err.message ?? 'An unexpected error occurred';
     }
-  }, []);
+
+    if ('status' in error) {
+      const err = error as FetchBaseQueryError;
+      if (err.data && typeof err.data === 'object' && 'message' in err.data) {
+        return String((err.data as Record<string, unknown>).message);
+      }
+    }
+
+    return 'An unexpected error occurred';
+  };
+
+  const errorMessage = getErrorMessage();
 
   useEffect(() => {
     const hasPage = searchParams.has('page');
@@ -89,18 +78,10 @@ export const App: React.FC = () => {
     }
   }, [searchParams, storagePage, initialQuery, setSearchParams]);
 
-  useEffect(() => {
-    if (currentQuery === lastAppliedState.current.query && currentPage === lastAppliedState.current.page) {
-      return;
-    }
-
-    loadBooks(currentQuery, currentPage);
-  }, [currentQuery, currentPage, loadBooks]);
-
   const handleSearch = useCallback(
     (value: string): void => {
       const trimmed = value.trim();
-      if (trimmed === lastAppliedState.current.query) return;
+      if (trimmed === currentQuery) return;
 
       if (trimmed.length >= 3 || trimmed.length === 0) {
         setSearchParams((prev) => {
@@ -113,7 +94,7 @@ export const App: React.FC = () => {
         setStoragePage(1);
       }
     },
-    [setSearchQuery, setSearchParams, setStoragePage],
+    [currentQuery, setSearchQuery, setSearchParams, setStoragePage],
   );
 
   const handleBookSelect = useCallback(
@@ -160,20 +141,22 @@ export const App: React.FC = () => {
           }`}
         >
           <div className="max-w-5xl mx-auto">
-            {error && !isLoading ? (
-              <ErrorMessage message={error} onRetry={() => loadBooks(currentQuery, currentPage)} />
-            ) : null}
+            {errorMessage && !isLoading ? <ErrorMessage message={errorMessage} onRetry={refetch} /> : null}
 
             {isLoading ? (
               <Loader query={currentQuery} />
             ) : (
               <>
-                {!error && books.length > 0 ? (
+                {!errorMessage && books.length > 0 ? (
                   <div className="mb-8 flex justify-center">
                     <Pagination current={currentPage} total={totalPages} />
                   </div>
                 ) : null}
-                <BookList books={books} hasError={!!error} onBookSelect={(book) => handleBookSelect(book.id)} />
+                <BookList
+                  books={books}
+                  hasError={!!errorMessage}
+                  onBookSelect={(book: Book) => handleBookSelect(book.id)}
+                />
               </>
             )}
           </div>

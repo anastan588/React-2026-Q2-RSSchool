@@ -1,15 +1,15 @@
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
 
 import { addBook, removeBook } from '@/state/selectedSlice';
-import type { RootState } from '@/state/store';
+import { useAppDispatch, useAppSelector } from '@/state/store';
 import type { BookSelectionCheckboxProps } from '@/types/types';
 
-const BookSelectionCheckbox = ({ book }: BookSelectionCheckboxProps) => {
-  const dispatch = useDispatch();
+export const BookSelectionCheckbox: React.FC<BookSelectionCheckboxProps> = ({ book }) => {
+  const dispatch = useAppDispatch();
   const { id, title } = book;
 
-  const isSelected = useSelector((state: RootState) =>
-    state.selectedReducer.selectedBooks.some((selectedBook) => selectedBook.id === id),
+  const isSelected = useAppSelector((state) =>
+    state.selected.selectedBooks.some((selectedBook) => selectedBook.id === id),
   );
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -25,11 +25,11 @@ const BookSelectionCheckbox = ({ book }: BookSelectionCheckboxProps) => {
   return (
     <div className="inline-block cursor-pointer select-none p-1" onClick={(e) => e.stopPropagation()}>
       <input
-        type="checkbox"
-        checked={isSelected}
-        onChange={handleCheckboxChange}
-        className="w-5 h-5 cursor-pointer accent-primary rounded-sm"
         aria-label={`Select ${title}`}
+        checked={isSelected}
+        className="w-5 h-5 cursor-pointer accent-primary rounded-sm"
+        type="checkbox"
+        onChange={handleCheckboxChange}
       />
     </div>
   );
