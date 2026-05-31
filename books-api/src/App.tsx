@@ -11,6 +11,7 @@ import ErrorMessage from '@/components/ErrorMessage';
 import Header from '@/components/Header';
 import Loader from '@/components/Loader';
 import Pagination from '@/components/Pangination';
+import RefreshCacheButton from '@/components/RefreshCacheButton';
 import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
@@ -122,6 +123,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500 relative">
       <SelectedBooksFlyout />
+      <RefreshCacheButton />
       <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <ErrorButton />
       </div>
