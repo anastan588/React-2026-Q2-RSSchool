@@ -1,103 +1,169 @@
 import './App.css';
 
-import { useState } from 'react';
+import { useCallback, useEffect } from 'react';
+import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
-import heroImg from './assets/hero.png';
-import reactLogo from './assets/react.svg';
-import viteLogo from './assets/vite.svg';
+import BookList from '@/components/BookList';
+import ErrorButton from '@/components/ErrorButton';
+import ErrorMessage from '@/components/ErrorMessage';
+import Header from '@/components/Header';
+import Loader from '@/components/Loader';
+import Pagination from '@/components/Pangination';
+import RefreshCacheButton from '@/components/RefreshCacheButton';
+import SelectedBooksFlyout from '@/components/SelectedFlayout';
+import useSearchStorage from '@/hooks/StorageHook';
+import NotFound from '@/pages/NotFound';
+import { booksApi, useSearchBooksQuery } from '@/services/BooksService';
+import { useAppDispatch } from '@/state/store';
+import type { Book } from '@/types/types';
+import getErrorMessage from '@/utils/getErrorMessage';
 
-const App = () => {
-  const [count, setCount] = useState(0);
+export const App: React.FC = () => {
+  const { searchQuery: initialQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dispatch = useAppDispatch();
+
+  const urlPageStr = searchParams.get('page');
+  const urlQueryStr = searchParams.get('q');
+
+  const isInvalidPageParam = urlPageStr !== null && !/^\d+$/.test(urlPageStr);
+  const isDetailsPanelOpen = location.pathname.includes('/details/');
+
+  const currentQuery = urlQueryStr !== null ? urlQueryStr : initialQuery;
+  const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage > 1 ? storagePage : 1;
+
+  const { data, error, isLoading, isFetching, refetch } = useSearchBooksQuery({
+    query: currentQuery,
+    page: currentPage,
+  });
+
+  const books = data?.books ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+  const errorMessage = getErrorMessage(error);
+
+  useEffect(() => {
+    const hasPage = searchParams.has('page');
+    const hasQuery = searchParams.has('q');
+    if (!hasPage || !hasQuery) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+
+      if (!hasPage) {
+        const fallbackPage = storagePage > 1 ? String(storagePage) : '1';
+        nextParams.set('page', fallbackPage);
+      }
+
+      if (!hasQuery && initialQuery) {
+        nextParams.set('q', initialQuery);
+      }
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [searchParams, storagePage, initialQuery, setSearchParams]);
+
+  const handleSearch = useCallback(
+    (value: string): void => {
+      const trimmed = value.trim();
+      if (trimmed === currentQuery) return;
+
+      if (trimmed.length >= 3 || trimmed.length === 0) {
+        setSearchParams((prev) => {
+          const nextParams = new URLSearchParams(prev.toString());
+          nextParams.set('q', trimmed);
+          nextParams.set('page', '1');
+          return nextParams;
+        });
+        setSearchQuery(trimmed);
+        setStoragePage(1);
+      }
+    },
+    [currentQuery, setSearchQuery, setSearchParams, setStoragePage],
+  );
+
+  const handleBookSelect = useCallback(
+    (bookId: string) => {
+      const cleanedId = bookId.replace('/works/', '');
+      navigate(`/details/${cleanedId}${location.search}`);
+    },
+    [navigate, location.search],
+  );
+
+  const handleCloseDetails = useCallback(() => {
+    if (isDetailsPanelOpen) {
+      navigate(
+        urlPageStr
+          ? `/?page=${urlPageStr}&q=${encodeURIComponent(currentQuery)}`
+          : `/?q=${encodeURIComponent(currentQuery)}`,
+      );
+    }
+  }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
+
+  const handleManualRefresh = (): void => {
+    dispatch(booksApi.util.invalidateTags(['Books']));
+  };
+
+  if (isInvalidPageParam) {
+    return <NotFound />;
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img alt="" className="base" height="179" src={heroImg} width="170" />
-          <img alt="React logo" className="framework" src={reactLogo} />
-          <img alt="Vite logo" className="vite" src={viteLogo} />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button className="counter" type="button" onClick={() => setCount((count) => count + 1)}>
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks" />
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#documentation-icon" />
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="logo" src={viteLogo} />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" rel="noreferrer" target="_blank">
-                <img alt="" className="button-icon" src={reactLogo} />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg aria-hidden="true" className="icon" role="presentation">
-            <use href="/icons.svg#social-icon" />
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#github-icon" />
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#discord-icon" />
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#x-icon" />
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" rel="noreferrer" target="_blank">
-                <svg aria-hidden="true" className="button-icon" role="presentation">
-                  <use href="/icons.svg#bluesky-icon" />
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks" />
-      <section id="spacer" />
-    </>
+    <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500 relative">
+      <SelectedBooksFlyout />
+      <RefreshCacheButton isFetching={isFetching} onRefresh={handleManualRefresh} />
+      <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <ErrorButton />
+      </div>
+      <Header currentQuery={currentQuery} handleSearch={handleSearch} />
+      <div className="grow flex w-full max-w-[1400px] mx-auto relative">
+        {isDetailsPanelOpen ? (
+          <button
+            aria-label="Close details"
+            className="absolute inset-0 z-10 bg-black/5 dark:bg-black/20 backdrop-blur-xs block w-full h-full cursor-default transition-all duration-300 animate-in fade-in"
+            type="button"
+            onClick={handleCloseDetails}
+          />
+        ) : null}
+        <main
+          className={`grow transition-all duration-500 py-12 px-6 z-0 ${
+            isDetailsPanelOpen ? 'w-1/2 lg:w-3/5 hidden md:block' : 'w-full'
+          }`}
+        >
+          <div className="max-w-5xl mx-auto">
+            {errorMessage && !isLoading && !isFetching ? (
+              <ErrorMessage message={errorMessage} onRetry={refetch} />
+            ) : null}
+            {isLoading || isFetching ? (
+              <Loader query={currentQuery} />
+            ) : (
+              !errorMessage &&
+              books.length > 0 && (
+                <div
+                  className={`transition-opacity duration-300 ${
+                    isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
+                  }`}
+                >
+                  <div className="mb-8 flex justify-center">
+                    <Pagination current={currentPage} total={totalPages} />
+                  </div>
+                  <BookList
+                    books={books}
+                    hasError={!!errorMessage}
+                    onBookSelect={(book: Book) => handleBookSelect(book.id)}
+                  />
+                </div>
+              )
+            )}
+          </div>
+        </main>
+        {isDetailsPanelOpen ? (
+          <aside className="w-full md:w-1/2 lg:w-2/5 h-[calc(100vh-88px)] sticky top-[88px] z-20 shrink-0 border-l border-border-custom bg-card/90 backdrop-blur-xl transition-all duration-300 shadow-2xl animate-in slide-in-from-right duration-300">
+            <Outlet />
+          </aside>
+        ) : null}
+      </div>
+      <footer className="py-10 bg-card/40 border-t border-border-custom flex justify-center backdrop-blur-xs transition-colors duration-300" />
+    </div>
   );
 };
 
