@@ -1,6 +1,6 @@
 import './App.css';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
@@ -9,22 +9,21 @@ import ErrorMessage from '@/components/ErrorMessage';
 import Header from '@/components/Header';
 import Loader from '@/components/Loader';
 import Pagination from '@/components/Pangination';
+import RefreshCacheButton from '@/components/RefreshCacheButton';
 import SelectedBooksFlyout from '@/components/SelectedFlayout';
 import useSearchStorage from '@/hooks/StorageHook';
 import NotFound from '@/pages/NotFound';
-import { searchBooks } from '@/services/BooksService';
+import { booksApi, useSearchBooksQuery } from '@/services/BooksService';
+import { useAppDispatch } from '@/state/store';
 import type { Book } from '@/types/types';
+import getErrorMessage from '@/utils/getErrorMessage';
 
 export const App: React.FC = () => {
   const { searchQuery: initialQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-
-  const [books, setBooks] = useState<Book[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [totalPages, setTotalPages] = useState<number>(1);
+  const dispatch = useAppDispatch();
 
   const urlPageStr = searchParams.get('page');
   const urlQueryStr = searchParams.get('q');
@@ -35,41 +34,15 @@ export const App: React.FC = () => {
   const currentQuery = urlQueryStr !== null ? urlQueryStr : initialQuery;
   const currentPage = urlPageStr ? parseInt(urlPageStr, 10) : storagePage > 1 ? storagePage : 1;
 
-  const lastAppliedState = useRef<{ query: string; page: number }>({
-    query: '',
-    page: 0,
+  const { data, error, isLoading, isFetching, refetch } = useSearchBooksQuery({
+    query: currentQuery,
+    page: currentPage,
   });
 
-  const loadBooks = useCallback(async (query: string, page: number): Promise<void> => {
-    setIsLoading(true);
-    setError(null);
-    lastAppliedState.current = { query, page };
+  const books = data?.books ?? [];
+  const totalPages = data?.totalPages ?? 1;
 
-    try {
-      const response = await searchBooks(query, { page });
-
-      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
-        return;
-      }
-
-      if (Array.isArray(response)) {
-        setBooks(response);
-        setTotalPages(Math.ceil(response.length / 10) || 1);
-      } else {
-        setBooks(response.books || []);
-        setTotalPages(response.totalPages || 1);
-      }
-      setIsLoading(false);
-    } catch (err: unknown) {
-      if (lastAppliedState.current.query !== query || lastAppliedState.current.page !== page) {
-        return;
-      }
-      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setError(errorMsg);
-      setIsLoading(false);
-      setBooks([]);
-    }
-  }, []);
+  const errorMessage = getErrorMessage(error);
 
   useEffect(() => {
     const hasPage = searchParams.has('page');
@@ -89,18 +62,10 @@ export const App: React.FC = () => {
     }
   }, [searchParams, storagePage, initialQuery, setSearchParams]);
 
-  useEffect(() => {
-    if (currentQuery === lastAppliedState.current.query && currentPage === lastAppliedState.current.page) {
-      return;
-    }
-
-    loadBooks(currentQuery, currentPage);
-  }, [currentQuery, currentPage, loadBooks]);
-
   const handleSearch = useCallback(
     (value: string): void => {
       const trimmed = value.trim();
-      if (trimmed === lastAppliedState.current.query) return;
+      if (trimmed === currentQuery) return;
 
       if (trimmed.length >= 3 || trimmed.length === 0) {
         setSearchParams((prev) => {
@@ -113,7 +78,7 @@ export const App: React.FC = () => {
         setStoragePage(1);
       }
     },
-    [setSearchQuery, setSearchParams, setStoragePage],
+    [currentQuery, setSearchQuery, setSearchParams, setStoragePage],
   );
 
   const handleBookSelect = useCallback(
@@ -134,6 +99,10 @@ export const App: React.FC = () => {
     }
   }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
 
+  const handleManualRefresh = (): void => {
+    dispatch(booksApi.util.invalidateTags(['Books']));
+  };
+
   if (isInvalidPageParam) {
     return <NotFound />;
   }
@@ -141,6 +110,7 @@ export const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground transition-colors duration-500 relative">
       <SelectedBooksFlyout />
+      <RefreshCacheButton isFetching={isFetching} onRefresh={handleManualRefresh} />
       <div className="fixed bottom-6 right-6 z-40 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <ErrorButton />
       </div>
@@ -160,21 +130,29 @@ export const App: React.FC = () => {
           }`}
         >
           <div className="max-w-5xl mx-auto">
-            {error && !isLoading ? (
-              <ErrorMessage message={error} onRetry={() => loadBooks(currentQuery, currentPage)} />
+            {errorMessage && !isLoading && !isFetching ? (
+              <ErrorMessage message={errorMessage} onRetry={refetch} />
             ) : null}
-
-            {isLoading ? (
+            {isLoading || isFetching ? (
               <Loader query={currentQuery} />
             ) : (
-              <>
-                {!error && books.length > 0 ? (
+              !errorMessage &&
+              books.length > 0 && (
+                <div
+                  className={`transition-opacity duration-300 ${
+                    isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
+                  }`}
+                >
                   <div className="mb-8 flex justify-center">
                     <Pagination current={currentPage} total={totalPages} />
                   </div>
-                ) : null}
-                <BookList books={books} hasError={!!error} onBookSelect={(book) => handleBookSelect(book.id)} />
-              </>
+                  <BookList
+                    books={books}
+                    hasError={!!errorMessage}
+                    onBookSelect={(book: Book) => handleBookSelect(book.id)}
+                  />
+                </div>
+              )
             )}
           </div>
         </main>

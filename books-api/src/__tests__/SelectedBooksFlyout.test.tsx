@@ -35,10 +35,10 @@ const mockBooks: Book[] = [
 const renderWithProvider = (initialBooks: Book[] = []) => {
   const store = configureStore({
     reducer: {
-      selectedReducer: selectedReducer,
+      selected: selectedReducer,
     },
     preloadedState: {
-      selectedReducer: { selectedBooks: initialBooks },
+      selected: { selectedBooks: initialBooks },
     },
   });
 
@@ -85,7 +85,7 @@ describe('SelectedBooksFlyout Component', () => {
     const unselectAllButton = screen.getByRole('button', { name: /unselect all/i });
     await user.click(unselectAllButton);
 
-    expect(store.getState().selectedReducer.selectedBooks).toEqual([]);
+    expect(store.getState().selected.selectedBooks).toEqual([]);
   });
 
   it('generates csv transmission payload and triggers anchor download sequence on click', async () => {

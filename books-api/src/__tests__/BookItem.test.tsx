@@ -14,7 +14,7 @@ vi.mock('@/assets/mock-book.jpg', () => ({
 const createMockStore = (initialValue: Book[] = []) =>
   configureStore({
     reducer: {
-      selectedReducer: () => ({ selectedBooks: initialValue }),
+      selected: () => ({ selectedBooks: initialValue }),
     },
   });
 
@@ -69,9 +69,7 @@ describe('BookItem Component', () => {
 
     renderWithProvider(
       <div onClick={handleCardClick}>
-        <div onClick={(e) => e.stopPropagation()} data-testid="stop-prop">
-          <BookItem book={mockBook} />
-        </div>
+        <BookItem book={mockBook} />
       </div>,
     );
 

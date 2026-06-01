@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 
 import Button from '@/components/Button';
 import { prepareCsvDownload } from '@/services/CsvDownloadService';
 import { clearBooks } from '@/state/selectedSlice';
-import type { RootState } from '@/state/store';
+import { useAppSelector } from '@/state/store';
 
 export const SelectedBooksFlyout = () => {
   const dispatch = useDispatch();
 
   const downloadRef = useRef<HTMLAnchorElement>(null);
 
-  const selectedBooks = useSelector((state: RootState) => state.selectedReducer.selectedBooks);
+  const selectedBooks = useAppSelector((state) => state.selected?.selectedBooks ?? state.selected?.selectedBooks ?? []);
 
   const [csvData, setCsvData] = useState<{ url: string; fileName: string } | null>(null);
 
@@ -49,10 +49,10 @@ export const SelectedBooksFlyout = () => {
     >
       <a
         ref={downloadRef}
-        href={csvData?.url || '#'}
-        download={csvData?.fileName || ''}
-        className="hidden"
         aria-hidden="true"
+        className="hidden"
+        download={csvData?.fileName || ''}
+        href={csvData?.url || '#'}
       />
       <div className="flex flex-col items-center text-center gap-3">
         <div className="flex flex-col items-center gap-1.5">

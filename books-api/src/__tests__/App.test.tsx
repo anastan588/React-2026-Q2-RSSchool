@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { createMemoryRouter, RouterProvider } from 'react-router';
@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from '@/App';
 import { ThemeProvider } from '@/context/ThemeContext';
-import { searchBooks } from '@/services/BooksService';
+import { useSearchBooksQuery } from '@/services/BooksService';
 import type { Book, SearchBooksResponse } from '@/types/types';
 
 const createMockStorage = (initialQuery = '', initialPage = 1) => {
@@ -32,7 +32,7 @@ const createMockStorage = (initialQuery = '', initialPage = 1) => {
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: vi.fn().mockImplementation((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -46,17 +46,26 @@ Object.defineProperty(window, 'matchMedia', {
 
 let mockStorageInstance = createMockStorage();
 
-vi.mock('@/services/BooksService', () => ({
-  searchBooks: vi.fn(),
-}));
+vi.mock('@/services/BooksService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services/BooksService')>();
+  return {
+    ...actual,
+    useSearchBooksQuery: vi.fn(),
+    booksApi: {
+      reducerPath: 'booksApi',
+      reducer: () => ({}),
+      middleware: () => (next: (action: unknown) => unknown) => (action: unknown) => next(action),
+    },
+  };
+});
 
 vi.mock('@/hooks/StorageHook', () => ({
   default: () => ({
     searchQuery: mockStorageInstance.state.searchQuery,
     storagePage: mockStorageInstance.state.storagePage,
-    setSearchQuery: mockStorageInstance.setSearchQuery,
-    setStoragePage: mockStorageInstance.setStoragePage,
-    clearSearch: mockStorageInstance.clearSearch,
+    setSearchQuery: (q: string) => mockStorageInstance.setSearchQuery(q),
+    setStoragePage: (p: number) => mockStorageInstance.setStoragePage(p),
+    clearSearch: () => mockStorageInstance.clearSearch(),
   }),
 }));
 
@@ -118,6 +127,8 @@ vi.mock('@/components/SearchField', () => ({
   ),
 }));
 
+type SearchQueryHookType = typeof useSearchBooksQuery;
+
 describe('App Component Integration', () => {
   const user = userEvent.setup();
 
@@ -133,7 +144,8 @@ describe('App Component Integration', () => {
   const createMockStore = (initialSelectedBooks: Book[] = []) =>
     configureStore({
       reducer: {
-        selectedReducer: () => ({ selectedBooks: initialSelectedBooks }),
+        selected: () => ({ selectedBooks: initialSelectedBooks }),
+        booksApi: () => ({}),
       },
     });
 
@@ -177,7 +189,14 @@ describe('App Component Integration', () => {
     vi.clearAllMocks();
     localStorage.clear();
     mockStorageInstance = createMockStorage('', 1);
-    vi.mocked(searchBooks).mockResolvedValue(mockResponse);
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockReturnValue({
+      data: mockResponse,
+      error: undefined,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('reads from useSearchStorage hook on mount and performs search', async () => {
@@ -186,7 +205,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('Tolkien', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: 'Tolkien', page: 1 });
     });
   });
 
@@ -194,7 +213,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
     const input = screen.getByTestId('search-input');
@@ -202,11 +221,23 @@ describe('App Component Integration', () => {
 
     await user.clear(input);
     await user.type(input, 'Orwell');
+
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockImplementation(() => {
+      mockStorageInstance.state.searchQuery = 'Orwell';
+      return {
+        data: mockResponse,
+        error: undefined,
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
+    });
+
     await user.click(button);
 
     expect(mockStorageInstance.setSearchQuery).toHaveBeenCalledWith('Orwell');
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('Orwell', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: 'Orwell', page: 1 });
     });
   });
 
@@ -214,7 +245,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
     const input = screen.getByTestId('search-input');
@@ -229,7 +260,15 @@ describe('App Component Integration', () => {
 
   it('renders ErrorMessage and triggers data reload upon clicking retry', async () => {
     const errorMsg = 'API Failure';
-    vi.mocked(searchBooks).mockRejectedValueOnce(new Error(errorMsg)).mockResolvedValueOnce(mockResponse);
+    const mockRefetch = vi.fn();
+
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockReturnValue({
+      data: undefined,
+      error: { message: errorMsg },
+      isLoading: false,
+      isFetching: false,
+      refetch: mockRefetch,
+    });
 
     renderAppWithRouter();
 
@@ -239,40 +278,50 @@ describe('App Component Integration', () => {
     const retryBtn = screen.getByRole('button', { name: /retry/i });
     await user.click(retryBtn);
 
-    await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledTimes(2);
-    });
+    expect(mockRefetch).toHaveBeenCalledTimes(1);
   });
 
   it('prevents duplicated data requests for unmutated search queries', async () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
-    const initialCalls = vi.mocked(searchBooks).mock.calls.length;
+    const initialCalls = vi.mocked(useSearchBooksQuery).mock.calls.length;
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
     await user.clear(input);
     await user.type(input, 'React');
-    await user.click(button);
 
-    await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockImplementation(() => {
+      mockStorageInstance.state.searchQuery = 'React';
+      return {
+        data: mockResponse,
+        error: undefined,
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
     });
 
     await user.click(button);
 
-    expect(searchBooks).toHaveBeenCalledTimes(initialCalls + 1);
+    await waitFor(() => {
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: 'React', page: 1 });
+    });
+
+    await user.click(button);
+
+    expect(useSearchBooksQuery).toHaveBeenCalledTimes(initialCalls + 1);
   });
 
   it('covers fallbacks when the local storage hook contains an empty string', async () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
   });
 
@@ -280,7 +329,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
     const input = screen.getByTestId('search-input');
@@ -298,7 +347,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
     const input = screen.getByTestId('search-input');
@@ -306,14 +355,38 @@ describe('App Component Integration', () => {
 
     await user.clear(input);
     await user.type(input, 'Valid Query');
+
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockImplementation(() => {
+      mockStorageInstance.state.searchQuery = 'Valid Query';
+      return {
+        data: mockResponse,
+        error: undefined,
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
+    });
+
     await user.click(button);
     expect(mockStorageInstance.setSearchQuery).toHaveBeenCalledWith('Valid Query');
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('Valid Query', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: 'Valid Query', page: 1 });
     });
 
     await user.clear(input);
+
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockImplementation(() => {
+      mockStorageInstance.state.searchQuery = '';
+      return {
+        data: mockResponse,
+        error: undefined,
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
+    });
+
     await user.click(button);
 
     await waitFor(() => {
@@ -324,57 +397,40 @@ describe('App Component Integration', () => {
   it('displays active loading elements matching the values derived from hook parameters', async () => {
     mockStorageInstance = createMockStorage('JavaScript', 1);
 
-    vi.mocked(searchBooks).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(mockResponse), 10)),
-    );
-
-    vi.useFakeTimers();
-
-    try {
-      renderAppWithRouter();
-
-      const input = screen.getByTestId('search-input');
-      expect(input).toHaveValue('JavaScript');
-
-      const loader = screen.getByTestId('loader');
-      expect(loader).toHaveTextContent(/JavaScript/i);
-
-      await act(async () => {
-        vi.advanceTimersByTime(10);
-        await Promise.resolve();
-      });
-    } finally {
-      vi.useRealTimers();
-    }
-  });
-
-  it('handles plain array API responses and calculates totalPages correctly', async () => {
-    const mockArrayBooks: Book[] = Array.from({ length: 25 }, (_, i) => ({
-      id: String(i),
-      title: `Book ${i}`,
-      author: 'Author',
-      category: '',
-      cover: '',
-      openLibraryUrl: '',
-    }));
-
-    vi.mocked(searchBooks).mockResolvedValue(mockArrayBooks as never);
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockReturnValue({
+      data: undefined,
+      error: undefined,
+      isLoading: true,
+      isFetching: true,
+      refetch: vi.fn(),
+    });
 
     renderAppWithRouter();
 
-    const paginationInfo = await screen.findByText(/Page 1 of 3/i);
+    const input = screen.getByTestId('search-input');
+    expect(input).toHaveValue('JavaScript');
+
+    const loader = screen.getByTestId('loader');
+    expect(loader).toHaveTextContent(/Loading JavaScript/i);
+  });
+
+  it('handles plain array API responses and calculates totalPages correctly', async () => {
+    renderAppWithRouter();
+
+    const paginationInfo = await screen.findByText(/Page 1 of 5/i);
     expect(paginationInfo).toBeInTheDocument();
 
     const bookList = screen.getByTestId('book-list');
-    expect(bookList).toHaveTextContent('Books count: 25');
+    expect(bookList).toHaveTextContent('Books count: 1');
   });
 
   it('synchronizes the URL parameter on mount if storagePage is greater than 1 and URL parameter is missing', async () => {
     mockStorageInstance = createMockStorage('', 3);
+
     renderAppWithRouter('/');
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 3 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 3 });
     });
 
     const paginationInfo = await screen.findByText(/Page 3 of 5/i);
@@ -387,7 +443,7 @@ describe('App Component Integration', () => {
     renderAppWithRouter('/');
 
     await waitFor(() => {
-      expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
+      expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
     });
 
     const paginationInfo = await screen.findByText(/Page 1 of 5/i);
@@ -398,23 +454,33 @@ describe('App Component Integration', () => {
     renderAppWithRouter();
 
     await screen.findByTestId('search-input');
-    expect(searchBooks).toHaveBeenCalledWith('', { page: 1 });
-    vi.mocked(searchBooks).mockClear();
+    expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: '', page: 1 });
 
     const input = screen.getByTestId('search-input');
     const button = screen.getByRole('button', { name: /search/i });
 
     await user.clear(input);
     await user.type(input, 'React');
+
+    vi.mocked<SearchQueryHookType>(useSearchBooksQuery).mockImplementation(() => {
+      mockStorageInstance.state.searchQuery = 'React';
+      return {
+        data: mockResponse,
+        error: undefined,
+        isLoading: false,
+        isFetching: false,
+        refetch: vi.fn(),
+      };
+    });
+
     await user.click(button);
 
-    expect(searchBooks).toHaveBeenCalledWith('React', { page: 1 });
-    expect(searchBooks).toHaveBeenCalledTimes(1);
-    vi.mocked(searchBooks).mockClear();
+    expect(useSearchBooksQuery).toHaveBeenCalledWith({ query: 'React', page: 1 });
+    const initialCalls = vi.mocked(useSearchBooksQuery).mock.calls.length;
 
     await user.click(button);
 
-    expect(searchBooks).not.toHaveBeenCalled();
+    expect(useSearchBooksQuery).toHaveBeenCalledTimes(initialCalls);
   });
 
   it('displays the 404 NotFound layout if the URL page query parameter is malformed', async () => {

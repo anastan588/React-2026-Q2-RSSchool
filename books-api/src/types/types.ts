@@ -147,3 +147,11 @@ export interface HeaderProps {
   currentQuery: string;
   handleSearch: (query: string) => void;
 }
+
+// Refresh Button
+
+export interface RefreshCacheButtonProps {
+  onRefresh: () => void;
+  isFetching: boolean;
+  variant?: 'main' | 'details';
+}
