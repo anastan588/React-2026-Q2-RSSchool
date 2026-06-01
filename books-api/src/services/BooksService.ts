@@ -9,7 +9,7 @@ const ITEMS_PER_PAGE = 20;
 const getCacheTtl = (): number => {
   const metaEnv = import.meta.env as ImportMetaEnv & { VITE_CACHE_TTL?: string };
   const ttl = metaEnv.VITE_CACHE_TTL;
-  return ttl ? Number(ttl) : 60;
+  return ttl ? Number(ttl) : 300;
 };
 
 const CACHE_TTL_SECONDS = getCacheTtl();

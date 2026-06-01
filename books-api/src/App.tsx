@@ -1,8 +1,6 @@
 import './App.css';
 
 import { useCallback, useEffect } from 'react';
-import type { SerializedError } from '@reduxjs/toolkit';
-import type { FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { Outlet, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import BookList from '@/components/BookList';
@@ -18,6 +16,7 @@ import NotFound from '@/pages/NotFound';
 import { booksApi, useSearchBooksQuery } from '@/services/BooksService';
 import { useAppDispatch } from '@/state/store';
 import type { Book } from '@/types/types';
+import getErrorMessage from '@/utils/getErrorMessage';
 
 export const App: React.FC = () => {
   const { searchQuery: initialQuery, storagePage, setSearchQuery, setStoragePage } = useSearchStorage();
@@ -43,25 +42,7 @@ export const App: React.FC = () => {
   const books = data?.books ?? [];
   const totalPages = data?.totalPages ?? 1;
 
-  const getErrorMessage = (): string | null => {
-    if (!error) return null;
-
-    if ('message' in error) {
-      const err = error as SerializedError;
-      return err.message ?? 'An unexpected error occurred';
-    }
-
-    if ('status' in error) {
-      const err = error as FetchBaseQueryError;
-      if (err.data && typeof err.data === 'object' && 'message' in err.data) {
-        return String((err.data as Record<string, unknown>).message);
-      }
-    }
-
-    return 'An unexpected error occurred';
-  };
-
-  const errorMessage = getErrorMessage();
+  const errorMessage = getErrorMessage(error);
 
   useEffect(() => {
     const hasPage = searchParams.has('page');
@@ -119,7 +100,6 @@ export const App: React.FC = () => {
   }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
 
   const handleManualRefresh = (): void => {
-    // Явная очистка кэша заставляет стейт полностью обнулиться, гарантируя показ Loader
     dispatch(booksApi.util.invalidateTags(['Books', 'BookDetails']));
   };
 

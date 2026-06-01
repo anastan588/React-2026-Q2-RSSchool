@@ -9,8 +9,20 @@ import BookDetails from '@/pages/BookDetails';
 import { useFetchBookDetailsQuery } from '@/services/BooksService';
 import type { Book, ExtendedBook } from '@/types/types';
 
+const mockDispatch = vi.fn((action) => {
+  if (typeof action === 'function') {
+    return action(mockDispatch, () => ({ selected: { selectedBooks: [] } }), undefined);
+  }
+  return action;
+});
+
 vi.mock('@/services/BooksService', () => ({
   useFetchBookDetailsQuery: vi.fn(),
+  booksApi: {
+    util: {
+      invalidateTags: vi.fn(() => () => ({ type: 'mock-invalidate' })),
+    },
+  },
 }));
 
 vi.mock('@/components/Loader', () => ({
@@ -19,16 +31,29 @@ vi.mock('@/components/Loader', () => ({
 
 vi.mock('@/components/BookSelect', () => ({
   default: ({ book }: { book: Book }) => (
-    <input type="checkbox" aria-label={`select ${book.title}`} data-testid="mock-checkbox" />
+    <input aria-label={`select ${book.title}`} data-testid="mock-checkbox" type="checkbox" />
   ),
 }));
 
-const createMockStore = (initialValue: Book[] = []) =>
-  configureStore({
+vi.mock('@/utils/getErrorMessage', () => ({
+  default: vi.fn((error) => (error ? ((error as { message?: string }).message ?? 'Error') : null)),
+}));
+
+const createMockStore = (initialValue: Book[] = []) => {
+  const store = configureStore({
     reducer: {
       selected: () => ({ selectedBooks: initialValue }),
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+        immutableCheck: false,
+      }),
   });
+
+  store.dispatch = mockDispatch;
+  return store;
+};
 
 type QueryHookType = typeof useFetchBookDetailsQuery;
 
@@ -74,6 +99,7 @@ describe('BookDetails Component', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    mockDispatch.mockClear();
   });
 
   it('renders a loading indicator while data is being fetched from the API', async () => {
@@ -216,5 +242,45 @@ describe('BookDetails Component', () => {
 
     const checkbox = screen.getByRole('checkbox', { name: new RegExp(`select ${mockBookData.title}`, 'i') });
     expect(checkbox).toBeInTheDocument();
+  });
+
+  it('displays the custom amber refresh button and triggers cache invalidation dispatch on click', async () => {
+    const user = userEvent.setup();
+    vi.mocked<QueryHookType>(useFetchBookDetailsQuery).mockReturnValue({
+      data: mockBookData,
+      error: undefined,
+      isLoading: false,
+      isFetching: false,
+      refetch: vi.fn(),
+    });
+
+    renderBookDetailsWithRouter();
+
+    const refreshButton = screen.getByRole('button', { name: /refresh data/i });
+    expect(refreshButton).toBeInTheDocument();
+
+    await user.click(refreshButton);
+
+    expect(mockDispatch).toHaveBeenCalled();
+  });
+
+  it('overlays an intermediate loader panel and reduces layer opacity during refetching background cycles', async () => {
+    vi.mocked<QueryHookType>(useFetchBookDetailsQuery).mockReturnValue({
+      data: mockBookData,
+      error: undefined,
+      isLoading: false,
+      isFetching: true,
+      refetch: vi.fn(),
+    });
+
+    renderBookDetailsWithRouter();
+
+    const nestedLoader = screen.getByTestId('loader');
+    expect(nestedLoader).toBeInTheDocument();
+    expect(nestedLoader).toHaveTextContent(/book detailes/i);
+
+    const mainLayoutContainer = screen.getByRole('main');
+    expect(mainLayoutContainer).toHaveClass('opacity-30');
+    expect(mainLayoutContainer).toHaveClass('pointer-events-none');
   });
 });
