@@ -1,242 +1,271 @@
+import React from 'react';
+import { configureStore } from '@reduxjs/toolkit';
+import { renderHook, waitFor } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchBookDetails, searchBooks } from '@/services/BooksService';
+import { booksApi } from '@/services/BooksService';
 
-describe('BookService API', () => {
+const createTestStore = () => {
+  return configureStore({
+    reducer: {
+      [booksApi.reducerPath]: booksApi.reducer,
+    },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        serializableCheck: false,
+        immutableCheck: false,
+      }).concat(booksApi.middleware),
+  });
+};
+
+interface WrapperProps {
+  children: React.ReactNode;
+}
+
+describe('booksApi Query Integration Tests (Loading, Error, Caching)', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  describe('searchBooks', () => {
-    it('successfully fetches, transforms book data, and calculates totalPages', async () => {
-      const mockResponseData = {
-        numFound: 105,
-        docs: [
-          {
-            key: '/works/123',
-            title: 'Test Book',
-            author_name: ['Test Author'],
-            subject: ['Test Category'],
-            cover_i: 456,
-          },
-        ],
-      };
+  it('covers loading state during initial fetch', async () => {
+    vi.mocked(fetch).mockReturnValue(new Promise(() => {}));
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockResponseData),
-      } as unknown as Response);
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
 
-      const response = await searchBooks('Tolkien');
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'Tolkien', page: 1 }), { wrapper });
 
-      expect(response.books).toHaveLength(1);
-      expect(response.totalPages).toBe(6);
-
-      const firstBook = response.books[0];
-      expect(firstBook.title).toBe('Test Book');
-      expect(firstBook.author).toBe('Test Author');
-    });
-
-    it('defaults totalPages to 1 when numFound is missing or zero', async () => {
-      const mockResponseData = {
-        numFound: 0,
-        docs: [],
-      };
-
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockResponseData),
-      } as unknown as Response);
-
-      const response = await searchBooks('Empty');
-      expect(response.books).toHaveLength(0);
-      expect(response.totalPages).toBe(1);
-    });
-
-    it('should return an empty books array and 1 total page when docs property is missing', async () => {
-      const mockApiResponseWithoutDocs = {
-        numFound: 0,
-        start: 0,
-      };
-
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockApiResponseWithoutDocs),
-      } as unknown as Response);
-
-      const result = await searchBooks('some query');
-
-      expect(result.books).toEqual([]);
-      expect(result.totalPages).toBe(1);
-    });
-
-    it('should return OLID URL when cover_i is missing but edition_key exists', async () => {
-      const mockDoc = {
-        key: '/works/OL123W',
-        title: 'Test Book',
-        edition_key: ['OL999M'],
-      };
-
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ docs: [mockDoc] }),
-      } as unknown as Response);
-
-      const response = await searchBooks('test');
-      expect(response.books[0].cover).toBe('https://covers.openlibrary.org/b/olid/OL999M-M.jpg');
-    });
-
-    it('should return mock-book.jpg when both cover_i and edition_key are missing', async () => {
-      const mockDoc = {
-        key: '/works/OL123W',
-        title: 'Test Book',
-      };
-
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ docs: [mockDoc] }),
-      } as unknown as Response);
-
-      const response = await searchBooks('test');
-      expect(response.books[0].cover).toBe('./../assets/mock-book.jpg');
-    });
-
-    it('handles network failure gracefully', async () => {
-      vi.mocked(fetch).mockRejectedValue(new Error('Network error'));
-
-      await expect(() => searchBooks('query')).rejects.toThrow('Failed to fetch books');
-    });
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.isFetching).toBe(true);
+    expect(result.current.data).toBeUndefined();
   });
 
-  describe('searchBooks HTTP Error Statuses', () => {
-    it('throws specific error for 500 status', async () => {
-      vi.mocked(fetch).mockResolvedValue({
-        ok: false,
+  it('covers error state behavior when API call fails with server down status 500', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(null, {
         status: 500,
-      } as Response);
+        statusText: 'Internal Server Error',
+      }),
+    );
 
-      const execution = () => searchBooks('error');
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
 
-      await expect(execution).rejects.toThrow('Failed to fetch books');
-      await expect(execution).rejects.toSatisfy((error: unknown) => {
-        const err = error as Error & { cause: Error };
-        return err.cause?.message === 'Our library server is currently down. Please try again later.';
-      });
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'ErrorQuery', page: 1 }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
     });
 
-    it('throws specific error for 429 status (Rate Limit)', async () => {
-      vi.mocked(fetch).mockResolvedValue({
-        ok: false,
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeDefined();
+  });
+
+  it('covers error state behavior when API call fails with status 429', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(null, {
         status: 429,
-      } as Response);
+        statusText: 'Too Many Requests',
+      }),
+    );
 
-      await expect(() => searchBooks('test')).rejects.toSatisfy((error: unknown) => {
-        const err = error as Error & { cause: Error };
-        return err.cause?.message === 'Too many requests. Please slow down and try again in a minute.';
-      });
-    });
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
 
-    it('throws generic client error for other 4xx statuses', async () => {
-      vi.mocked(fetch).mockResolvedValue({
-        ok: false,
-        status: 400,
-      } as Response);
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'LimitQuery', page: 1 }), { wrapper });
 
-      await expect(() => searchBooks('test')).rejects.toSatisfy((error: unknown) => {
-        const err = error as Error & { cause: Error };
-        return err.cause?.message === 'We could not find the books you are looking for due to a client error.';
-      });
-    });
-
-    it('throws specific error for 404 status (Not Found)', async () => {
-      vi.mocked(fetch).mockResolvedValue({
-        ok: false,
-        status: 404,
-      } as Response);
-
-      await expect(() => searchBooks('test')).rejects.toSatisfy((error: unknown) => {
-        const err = error as Error & { cause: Error };
-        return err.cause?.message === 'Search service not found (404). Please contact support.';
-      });
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
     });
   });
 
-  describe('fetchBookDetails', () => {
-    it('successfully fetches and transforms a complete book details payload', async () => {
-      const mockApiResponse = {
-        key: '/works/OL27482W',
-        title: 'The Hobbit',
-        authors: [{ author: { key: '/authors/OL26320A' } }],
-        subjects: ['Fantasy', 'Adventure'],
-        covers: [14627509],
-        description: 'A tale of high adventure...',
-        first_publish_date: 'January 1938',
-        subject_places: ['Middle-earth', 'Rivendell', 'Mirkwood'],
-      };
+  it('covers error state behavior when API call fails with status 404', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(null, {
+        status: 404,
+        statusText: 'Not Found',
+      }),
+    );
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockApiResponse),
-      } as unknown as Response);
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
 
-      const result = await fetchBookDetails('OL27482W');
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'NotFoundQuery', page: 1 }), { wrapper });
 
-      expect(fetch).toHaveBeenCalledWith('https://openlibrary.org/works/OL27482W.json');
-      expect(result).toEqual({
-        id: '/works/OL27482W',
-        title: 'The Hobbit',
-        author: 'Details Loaded',
-        category: 'Fantasy',
-        cover: 'https://covers.openlibrary.org/b/id/14627509-M.jpg',
-        openLibraryUrl: 'https://openlibrary.org/works/OL27482W',
-        description: 'A tale of high adventure...',
-        publishDate: 'January 1938',
-        places: ['Middle-earth', 'Rivendell', 'Mirkwood'],
-      });
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+  });
+
+  it('covers error state behavior when API call fails with status 400', async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(null, {
+        status: 400,
+        statusText: 'Bad Request',
+      }),
+    );
+
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
+
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'BadRequestQuery', page: 1 }), {
+      wrapper,
     });
 
-    it('should correctly parse description when it is provided as an object with a value property', async () => {
-      const mockApiResponse = {
-        key: '/works/OL123W',
-        title: 'Test Book Title',
-        description: {
-          type: '/type/text',
-          value: 'This is the expected book description text string.',
+    await waitFor(() => {
+      expect(result.current.isError).toBe(true);
+    });
+  });
+
+  it('covers caching behavior between identical requests', async () => {
+    const mockData = {
+      numFound: 1,
+      docs: [
+        {
+          key: '/works/OL123W',
+          title: 'Cached Book',
+          author_name: ['Author'],
+          subject: ['Genre'],
+          cover_i: 123,
         },
-        authors: [{ author: { key: '/authors/OL456A' } }],
-        subjects: ['Fiction'],
-        covers: [12345],
-        first_publish_date: '2026',
-        subject_places: ['Minsk'],
-      };
+      ],
+    };
 
-      vi.mocked(fetch).mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockApiResponse),
-      } as unknown as Response);
+    vi.mocked(fetch).mockResolvedValue(Response.json(mockData));
 
-      const result = await fetchBookDetails('OL123W');
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
 
-      expect(result.description).toBe('This is the expected book description text string.');
-      expect(result.id).toBe('/works/OL123W');
+    const { result: firstRender } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'CacheTest', page: 1 }), {
+      wrapper,
     });
 
-    it('should catch errors and throw a custom error message on network failure', async () => {
-      const originalNetworkError = new Error('Network connection timeout');
-      vi.mocked(fetch).mockRejectedValue(originalNetworkError);
-
-      const execution = () => fetchBookDetails('OL123W');
-
-      await expect(execution).rejects.toThrow('Failed to fetch individual book profiles.');
-
-      try {
-        await execution();
-      } catch (error: unknown) {
-        expect(error).toBeInstanceOf(Error);
-        if (error instanceof Error) {
-          expect(error.cause).toBe(originalNetworkError);
-        }
-      }
+    await waitFor(() => {
+      expect(firstRender.current.isSuccess).toBe(true);
     });
+    expect(fetch).toHaveBeenCalledTimes(1);
+
+    const { result: secondRender } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'CacheTest', page: 1 }), {
+      wrapper,
+    });
+
+    await waitFor(() => {
+      expect(secondRender.current.isSuccess).toBe(true);
+    });
+
+    expect(secondRender.current.data).toEqual(firstRender.current.data);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('covers transformResponse fallbacks in searchBooks when docs array is missing', async () => {
+    vi.mocked(fetch).mockResolvedValue(Response.json({ numFound: 0 }));
+
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
+
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'EmptyQuery', page: 1 }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual({ books: [], totalPages: 1 });
+  });
+
+  it('covers cover layout fallbacks inside transformResponse using edition_key and completely missing assets', async () => {
+    const mockMixedData = {
+      numFound: 2,
+      docs: [
+        {
+          key: '/works/OL111W',
+          title: 'Edition Cover Book',
+          author_name: undefined,
+          subject: undefined,
+          edition_key: ['OL111E'],
+        },
+        {
+          key: '/works/OL222W',
+          title: 'No Cover Book',
+          author_name: undefined,
+          subject: undefined,
+        },
+      ],
+    };
+
+    vi.mocked(fetch).mockResolvedValue(Response.json(mockMixedData));
+
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
+
+    const { result } = renderHook(() => booksApi.useSearchBooksQuery({ query: 'MixedCovers', page: 1 }), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.books[0].cover).toContain('olid/OL111E-M.jpg');
+    expect(result.current.data?.books[1].author).toBe('Unknown Author');
+    expect(result.current.data?.books[1].category).toBe('General');
+    expect(result.current.data?.books[1].cover).toBe('./../assets/mock-book.jpg');
+  });
+
+  it('successfully executes fetchBookDetails endpoint and transforms plain description string profiles', async () => {
+    const mockDetailsData = {
+      key: '/works/OL999W',
+      title: 'Details Title',
+      authors: [{}],
+      subjects: ['History'],
+      covers: [999],
+      first_publish_date: '1999',
+      subject_places: ['London'],
+      description: 'Plain description string test',
+    };
+
+    vi.mocked(fetch).mockResolvedValue(Response.json(mockDetailsData));
+
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
+
+    const { result } = renderHook(() => booksApi.useFetchBookDetailsQuery('/works/OL999W'), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data).toEqual({
+      id: '/works/OL999W',
+      title: 'Details Title',
+      author: 'Details Loaded',
+      category: 'History',
+      cover: 'https://covers.openlibrary.org/b/id/999-M.jpg',
+      openLibraryUrl: 'https://openlibrary.org/works/OL999W',
+      description: 'Plain description string test',
+      publishDate: '1999',
+      places: ['London'],
+    });
+  });
+
+  it('executes fetchBookDetails endpoint and extracts descriptions embedded within object structures', async () => {
+    const mockDetailsObjectDescription = {
+      title: 'Object Description Title',
+      description: { value: 'Embedded object description value text' },
+    };
+
+    vi.mocked(fetch).mockResolvedValue(Response.json(mockDetailsObjectDescription));
+
+    const store = createTestStore();
+    const wrapper = ({ children }: WrapperProps) => <Provider store={store}>{children}</Provider>;
+
+    const { result } = renderHook(() => booksApi.useFetchBookDetailsQuery('OL888W'), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.data?.description).toBe('Embedded object description value text');
+    expect(result.current.data?.cover).toBe('./../assets/mock-book.jpg');
+    expect(result.current.data?.author).toBe('Unknown Author');
   });
 });

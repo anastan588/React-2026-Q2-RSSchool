@@ -15,13 +15,12 @@ export const BookDetails: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Декларативный запрос данных через RTK Query. Выполняется автоматически при наличии id.
   const {
     data: book,
     error,
     isLoading,
   } = useFetchBookDetailsQuery(id ?? '', {
-    skip: !id, // Пропускаем запрос, если id по какой-то причине отсутствует
+    skip: !id,
   });
 
   const handleClose = (): void => {
@@ -29,7 +28,6 @@ export const BookDetails: React.FC = () => {
     navigate(currentSearch ? `/?${currentSearch}` : '/');
   };
 
-  // Строгое извлечение текста ошибки без использования типа 'any'
   const getErrorMessage = (): string | null => {
     if (!error) return null;
 
