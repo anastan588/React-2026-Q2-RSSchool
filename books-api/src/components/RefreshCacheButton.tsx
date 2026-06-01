@@ -23,7 +23,6 @@ export const RefreshCacheButton: React.FC<RefreshCacheButtonProps> = ({ onRefres
       disabled={isFetching}
       onClick={onRefresh}
     >
-      <span className={`${isFetching ? 'animate-spin' : ''}`}>↻</span>
       {label}
     </Button>
   );
