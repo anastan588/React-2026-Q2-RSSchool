@@ -256,7 +256,7 @@ describe('BookDetails Component', () => {
 
     renderBookDetailsWithRouter();
 
-    const refreshButton = screen.getByRole('button', { name: /refresh data/i });
+    const refreshButton = screen.getByRole('button', { name: /refresh book data/i });
     expect(refreshButton).toBeInTheDocument();
 
     await user.click(refreshButton);
