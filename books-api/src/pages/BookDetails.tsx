@@ -6,6 +6,7 @@ import BookSelectionCheckbox from '@/components/BookSelect';
 import Button from '@/components/Button';
 import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
+import RefreshCacheButton from '@/components/RefreshCacheButton';
 import { booksApi, useFetchBookDetailsQuery } from '@/services/BooksService';
 import getErrorMessage from '@/utils/getErrorMessage';
 
@@ -51,16 +52,7 @@ export const BookDetails: React.FC = () => {
   return (
     <div className="h-full flex flex-col bg-card/90 backdrop-blur-xl border-l border-border-custom shadow-2xl relative">
       {!errorMessage && book ? (
-        <Button
-          className={`fixed bottom-24 right-6 z-50 px-4 py-2.5 rounded-full bg-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-2xl border-2 border-amber-400 cursor-pointer flex items-center gap-2 hover:bg-amber-400 active:scale-95 transition-all ${
-            isFetching ? 'opacity-70 pointer-events-none' : ''
-          }`}
-          disabled={isFetching}
-          onClick={handleManualRefresh}
-        >
-          <span className={`${isFetching ? 'animate-spin' : ''}`}>↻</span>
-          {isFetching ? 'Refreshing' : 'Refresh Data'}
-        </Button>
+        <RefreshCacheButton isFetching={isFetching} variant="details" onRefresh={handleManualRefresh} />
       ) : null}
 
       <header className="flex items-center justify-between p-6 border-b border-border-custom transition-colors duration-300">

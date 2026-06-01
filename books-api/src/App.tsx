@@ -100,7 +100,7 @@ export const App: React.FC = () => {
   }, [isDetailsPanelOpen, navigate, urlPageStr, currentQuery]);
 
   const handleManualRefresh = (): void => {
-    dispatch(booksApi.util.invalidateTags(['Books', 'BookDetails']));
+    dispatch(booksApi.util.invalidateTags(['Books']));
   };
 
   if (isInvalidPageParam) {
