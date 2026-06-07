@@ -124,8 +124,11 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     if (!result.success) {
       const formattedErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
-        if (issue.path.length > 0)
-          formattedErrors[issue.path.toString()] = issue.message;
+        // Fix: Explicitly extract the first string identifier segment from the path array
+        const fieldKey = issue.path[0];
+        if (fieldKey !== undefined) {
+          formattedErrors[fieldKey.toString()] = issue.message;
+        }
       });
       setUncErrors(formattedErrors);
     } else {

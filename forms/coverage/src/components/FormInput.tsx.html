@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">75% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/8</span>
+                <span class='fraction'>6/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">84.21% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>16/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">33.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>1/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>6/7</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -158,7 +158,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -170,16 +170,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">50x</span>
+<span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">50x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -248,10 +248,10 @@ import { type FieldValues } from "react-hook-form";
 &nbsp;
 import type { FormInputProps } from "@/types/types";
 &nbsp;
-export const <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >FormInput = &lt;T extends FieldValues&gt;({</span></span>
+export const FormInput = &lt;T extends FieldValues&gt;({
   id,
   label,
-  type = <span class="branch-0 cbranch-no" title="branch not covered" >"text",</span>
+  type = "text",
   error,
   isRHF,
   register,
@@ -260,16 +260,16 @@ export const <span class="cstat-no" title="statement not covered" ><span class="
   inputRef,
   onChange,
 }: FormInputProps&lt;T&gt;) =&gt; {
-  const [isPasswordVisible, <span class="cstat-no" title="statement not covered" >setIsPasswordVisible] = useState&lt;boolean&gt;(false);</span>
+  const [isPasswordVisible, setIsPasswordVisible] = useState&lt;boolean&gt;(false);
 &nbsp;
-  const activeFocusClass = <span class="cstat-no" title="statement not covered" >isRHF</span>
+  const activeFocusClass = isRHF
     ? "focus:border-emerald-500 focus:ring-emerald-500"
     : "focus:border-indigo-500 focus:ring-indigo-500";
 &nbsp;
-  const isPasswordField = <span class="cstat-no" title="statement not covered" >type === "password";</span>
-  const currentInputType = <span class="cstat-no" title="statement not covered" >isPasswordField &amp;&amp; isPasswordVisible ? "text" : type;</span>
+  const isPasswordField = type === "password";
+  const currentInputType = isPasswordField &amp;&amp; isPasswordVisible ? <span class="branch-0 cbranch-no" title="branch not covered" >"text" : t</span>ype;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;div&gt;
       &lt;label className="block text-sm font-medium text-gray-700" htmlFor={id}&gt;
         {label}
@@ -286,14 +286,14 @@ export const <span class="cstat-no" title="statement not covered" ><span class="
 &nbsp;
         {isPasswordField ? (
           &lt;button
-            aria-label={isPasswordVisible ? "Hide password" : "Show password"}
+            aria-label={isPasswordVisible ? <span class="branch-0 cbranch-no" title="branch not covered" >"Hide password" : "</span>Show password"}
             className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 focus:outline-none"
             type="button"
 <span class="fstat-no" title="function not covered" >            onClick={() =&gt; <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >s</span>etIsPasswordVisible((p</span>rev) =&gt; <span class="cstat-no" title="statement not covered" >!prev)</span>}</span>
           &gt;
             {isPasswordVisible ? (
               // Скрытый глаз (Eye Slash Icon)
-              &lt;svg
+<span class="branch-0 cbranch-no" title="branch not covered" >              &lt;svg</span>
                 className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
@@ -340,7 +340,7 @@ export const <span class="cstat-no" title="statement not covered" ><span class="
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-06-07T20:45:09.672Z
+                at 2026-06-07T21:05:31.343Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
