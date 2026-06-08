@@ -140,8 +140,7 @@ export const App = () => {
         ) : (
           <div className="bg-card border border-border-custom rounded-book p-10 text-center shadow-book backdrop-blur-xs">
             <p className="text-sm text-muted italic">
-              No configuration profiles submitted yet. Open a modal form to add
-              entries.
+              No profiles submitted yet. Open a modal form to add entries.
             </p>
           </div>
         )}

@@ -60,9 +60,7 @@ describe("App Component", () => {
     );
 
     expect(screen.getByText("Profile Workspace")).toBeInTheDocument();
-    expect(
-      screen.getByText(/No configuration profiles submitted yet/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/No profiles submitted yet/i)).toBeInTheDocument();
   });
 
   it("should open and close the modal window when form buttons are clicked", async () => {
