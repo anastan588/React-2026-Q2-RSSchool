@@ -44,6 +44,7 @@ export const Modal = ({ isOpen, title, onClose, children }: ModalProps) => {
             {title}
           </h3>
           <button
+            aria-label="Close"
             className="text-gray-400 hover:text-gray-500 p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
             type="button"
             onClick={onClose}

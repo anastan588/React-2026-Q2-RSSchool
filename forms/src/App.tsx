@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Modal } from "@/components/Modal";
 import { UnifiedForm } from "@/components/UnifiedForm";
@@ -10,14 +10,26 @@ type ModalType = "uncontrolled" | "rhf" | null;
 
 export const App = () => {
   const [activeModal, setActiveModal] = useState<ModalType>(null);
+  const [newestProfileId, setNewestProfileId] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
   const submissions = useAppSelector((state) => state.profile.submissions);
 
   const handleFormSubmission = (data: FormValues) => {
     dispatch(addSubmission(data));
+    const uniqueId = `${data.email}-${data.name}-${Date.now()}`;
+    setNewestProfileId(uniqueId);
     setActiveModal(null);
   };
+
+  useEffect(() => {
+    if (newestProfileId) {
+      const timer = setTimeout(() => {
+        setNewestProfileId(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [newestProfileId]);
 
   return (
     <div className="p-8 max-w-6xl mx-auto min-h-screen bg-background text-foreground transition-colors duration-200">
@@ -54,67 +66,76 @@ export const App = () => {
 
         {submissions.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {submissions.map((profile, index) => (
-              <div
-                key={`${profile.email}-${profile.name}-${index}`}
-                className="bg-card border border-border-custom rounded-book p-5 shadow-book flex flex-col justify-between backdrop-blur-xs transition-transform hover:translate-y-[-2px] duration-200"
-              >
-                <div className="flex items-center gap-4 border-b border-border-custom pb-4 mb-4">
-                  {profile.image ? (
-                    <img
-                      alt={`${profile.name}'s profile avatar layout`}
-                      className="w-16 h-16 object-cover rounded-full border border-border-custom shadow-inner shrink-0 bg-background"
-                      src={profile.image}
-                    />
-                  ) : (
-                    <div className="w-16 h-16 bg-accent-soft rounded-full flex items-center justify-center text-primary font-bold shrink-0 border border-border-custom">
-                      {profile.name
-                        ? profile.name.substring(0, 2).toUpperCase()
-                        : "N/A"}
+            {submissions.map((profile, index) => {
+              const currentId = `${profile.email}-${profile.name}-${index}`;
+              const isNewest =
+                newestProfileId !== null && index === submissions.length - 1;
+              const highlightClass = isNewest
+                ? "border-emerald-500 bg-emerald-50/10 dark:bg-emerald-950/10 shadow-lg animate-pulse"
+                : "border-border-custom bg-card";
+
+              return (
+                <div
+                  key={currentId}
+                  className={`rounded-book p-5 shadow-book flex flex-col justify-between backdrop-blur-xs transition-all duration-500 border ${highlightClass} hover:translate-y-[-2px]`}
+                >
+                  <div className="flex items-center gap-4 border-b border-border-custom pb-4 mb-4">
+                    {profile.image ? (
+                      <img
+                        alt={`${profile.name}'s profile avatar layout`}
+                        className="w-16 h-16 object-cover rounded-full border border-border-custom shadow-inner shrink-0 bg-background"
+                        src={profile.image}
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-accent-soft rounded-full flex items-center justify-center text-primary font-bold shrink-0 border border-border-custom">
+                        {profile.name
+                          ? profile.name.substring(0, 2).toUpperCase()
+                          : "N/A"}
+                      </div>
+                    )}
+                    <div className="overflow-hidden">
+                      <h3 className="font-bold truncate text-base">
+                        {profile.name}
+                      </h3>
+                      <p className="text-xs text-muted truncate">
+                        {profile.email}
+                      </p>
                     </div>
-                  )}
-                  <div className="overflow-hidden">
-                    <h3 className="font-bold truncate text-base">
-                      {profile.name}
-                    </h3>
-                    <p className="text-xs text-muted truncate">
-                      {profile.email}
+                  </div>
+
+                  <div className="space-y-2.5 text-xs">
+                    <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                      <strong className="text-muted font-medium">
+                        Age Metric:
+                      </strong>
+                      <span className="font-semibold">{profile.age}</span>
+                    </p>
+                    <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                      <strong className="text-muted font-medium">
+                        Selected Gender:
+                      </strong>{" "}
+                      <span className="capitalize font-semibold">
+                        {profile.gender}
+                      </span>
+                    </p>
+                    <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                      <strong className="text-muted font-medium">
+                        Target Country:
+                      </strong>
+                      <span className="font-semibold">{profile.country}</span>
+                    </p>
+                    <p className="flex justify-between pt-0.5">
+                      <strong className="text-muted font-medium">
+                        Terms Status:
+                      </strong>{" "}
+                      <span className="text-emerald-500 font-semibold flex items-center gap-1">
+                        Accepted ✓
+                      </span>
                     </p>
                   </div>
                 </div>
-
-                <div className="space-y-2.5 text-xs">
-                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
-                    <strong className="text-muted font-medium">
-                      Age Metric:
-                    </strong>
-                    <span className="font-semibold">{profile.age}</span>
-                  </p>
-                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
-                    <strong className="text-muted font-medium">
-                      Selected Gender:
-                    </strong>{" "}
-                    <span className="capitalize font-semibold">
-                      {profile.gender}
-                    </span>
-                  </p>
-                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
-                    <strong className="text-muted font-medium">
-                      Target Country:
-                    </strong>
-                    <span className="font-semibold">{profile.country}</span>
-                  </p>
-                  <p className="flex justify-between pt-0.5">
-                    <strong className="text-muted font-medium">
-                      Terms Status:
-                    </strong>{" "}
-                    <span className="text-emerald-500 font-semibold flex items-center gap-1">
-                      Accepted ✓
-                    </span>
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="bg-card border border-border-custom rounded-book p-10 text-center shadow-book backdrop-blur-xs">
