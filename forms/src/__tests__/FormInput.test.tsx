@@ -24,7 +24,7 @@ describe("FormInput Component (Acceptance Criteria & Accessibility)", () => {
     const label = screen.getByText("Full Name");
     const input = screen.getByLabelText("Full Name");
 
-    expect(label).toHaveAttribute("htmlFor", "test-name-input");
+    expect(label).toHaveAttribute("for", "test-name-input");
     expect(input).toHaveAttribute("id", "test-name-input");
   });
 
