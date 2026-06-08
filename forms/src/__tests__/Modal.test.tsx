@@ -1,11 +1,16 @@
 import "@testing-library/jest-dom";
 
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Modal } from "@/components/Modal";
 
 describe("Modal Component (Portals & Accessibility)", () => {
+  beforeEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+  });
+
   it("should render inside portal body when open, and return null when closed", () => {
     const { rerender } = render(
       <Modal isOpen={false} title="Test Modal" onClose={vi.fn()}>
@@ -19,6 +24,7 @@ describe("Modal Component (Portals & Accessibility)", () => {
         <div>Content</div>
       </Modal>,
     );
+
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog.parentElement).toBe(document.body);
@@ -33,10 +39,16 @@ describe("Modal Component (Portals & Accessibility)", () => {
     );
 
     const dialog = screen.getByRole("dialog");
-    expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByText("Accessible Modal")).toBeInTheDocument();
 
-    fireEvent.keyDown(document, { key: "Escape" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAttribute("aria-labelledby", "modal-title");
+    expect(
+      screen.getByRole("heading", { name: "Accessible Modal" }),
+    ).toBeInTheDocument();
+
+    expect(dialog).toHaveFocus();
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
@@ -53,7 +65,6 @@ describe("Modal Component (Portals & Accessibility)", () => {
 
     const overlay = screen.getByRole("dialog");
     fireEvent.mouseDown(overlay);
-    fireEvent.mouseUp(overlay);
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 });

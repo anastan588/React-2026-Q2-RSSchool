@@ -20,17 +20,17 @@ export const App = () => {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto min-h-screen bg-gray-50">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-950">Profile Workspace</h1>
-        <p className="text-gray-500 text-sm mt-1">
+    <div className="p-8 max-w-6xl mx-auto min-h-screen bg-background text-foreground transition-colors duration-200">
+      <header className="mb-8 border-b border-border-custom pb-6">
+        <h1 className="text-3xl font-bold tracking-tight">Profile Workspace</h1>
+        <p className="text-muted text-sm mt-1">
           Redux Toolkit state management history dashboard
         </p>
       </header>
 
-      <div className="flex gap-4 mb-8">
+      <div className="flex flex-wrap gap-4 mb-8">
         <button
-          className="rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus:outline-none transition-colors"
+          className="rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 focus:outline-hidden transition-all active:scale-[0.98] cursor-pointer"
           type="button"
           onClick={() => setActiveModal("uncontrolled")}
         >
@@ -38,7 +38,7 @@ export const App = () => {
         </button>
 
         <button
-          className="rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-none transition-colors"
+          className="rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus:outline-hidden transition-all active:scale-[0.98] cursor-pointer"
           type="button"
           onClick={() => setActiveModal("rhf")}
         >
@@ -47,8 +47,11 @@ export const App = () => {
       </div>
 
       <main>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-          Submitted Profiles History ({submissions.length})
+        <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+          <span>Submitted Profiles History</span>
+          <span className="text-xs bg-accent-soft text-primary px-2.5 py-0.5 rounded-full font-bold border border-border-custom">
+            {submissions.length}
+          </span>
         </h2>
 
         {submissions.length > 0 ? (
@@ -56,44 +59,58 @@ export const App = () => {
             {submissions.map((profile, index) => (
               <div
                 key={`${profile.email}-${profile.name}-${index}`}
-                className="bg-white border rounded-xl p-5 shadow-sm flex flex-col justify-between"
+                className="bg-card border border-border-custom rounded-book p-5 shadow-book flex flex-col justify-between backdrop-blur-xs transition-transform hover:translate-y-[-2px] duration-200"
               >
-                <div className="flex items-center gap-4 border-b border-gray-100 pb-4 mb-4">
+                <div className="flex items-center gap-4 border-b border-border-custom pb-4 mb-4">
                   {profile.image ? (
                     <img
                       alt={`${profile.name}'s profile avatar layout`}
-                      className="w-16 h-16 object-cover rounded-full border shadow-inner shrink-0"
+                      className="w-16 h-16 object-cover rounded-full border border-border-custom shadow-inner shrink-0 bg-background"
                       src={profile.image}
                     />
                   ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-gray-400 font-semibold shrink-0">
-                      N/A
+                    <div className="w-16 h-16 bg-accent-soft rounded-full flex items-center justify-center text-primary font-bold shrink-0 border border-border-custom">
+                      {profile.name
+                        ? profile.name.substring(0, 2).toUpperCase()
+                        : "N/A"}
                     </div>
                   )}
                   <div className="overflow-hidden">
-                    <h3 className="font-bold text-gray-950 truncate">
+                    <h3 className="font-bold truncate text-base">
                       {profile.name}
                     </h3>
-                    <p className="text-xs text-gray-500 truncate">
+                    <p className="text-xs text-muted truncate">
                       {profile.email}
                     </p>
                   </div>
                 </div>
 
-                <div className="space-y-2 text-xs text-gray-600">
-                  <p>
-                    <strong>Age Metric:</strong> {profile.age}
+                <div className="space-y-2.5 text-xs">
+                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                    <strong className="text-muted font-medium">
+                      Age Metric:
+                    </strong>
+                    <span className="font-semibold">{profile.age}</span>
                   </p>
-                  <p>
-                    <strong>Selected Gender:</strong>{" "}
-                    <span className="capitalize">{profile.gender}</span>
+                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                    <strong className="text-muted font-medium">
+                      Selected Gender:
+                    </strong>{" "}
+                    <span className="capitalize font-semibold">
+                      {profile.gender}
+                    </span>
                   </p>
-                  <p>
-                    <strong>Target Country:</strong> {profile.country}
+                  <p className="flex justify-between border-b border-border-custom/30 pb-1">
+                    <strong className="text-muted font-medium">
+                      Target Country:
+                    </strong>
+                    <span className="font-semibold">{profile.country}</span>
                   </p>
-                  <p>
-                    <strong>Terms Status:</strong>{" "}
-                    <span className="text-emerald-600 font-semibold">
+                  <p className="flex justify-between pt-0.5">
+                    <strong className="text-muted font-medium">
+                      Terms Status:
+                    </strong>{" "}
+                    <span className="text-emerald-500 font-semibold flex items-center gap-1">
                       Accepted ✓
                     </span>
                   </p>
@@ -102,8 +119,8 @@ export const App = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white border rounded-xl p-8 text-center shadow-sm">
-            <p className="text-sm text-gray-400 italic">
+          <div className="bg-card border border-border-custom rounded-book p-10 text-center shadow-book backdrop-blur-xs">
+            <p className="text-sm text-muted italic">
               No configuration profiles submitted to the Redux store yet. Open a
               modal form to add entries.
             </p>
