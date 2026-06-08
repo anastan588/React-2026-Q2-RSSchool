@@ -23,9 +23,7 @@ export const App = () => {
     <div className="p-8 max-w-6xl mx-auto min-h-screen bg-background text-foreground transition-colors duration-200">
       <header className="mb-8 border-b border-border-custom pb-6">
         <h1 className="text-3xl font-bold tracking-tight">Profile Workspace</h1>
-        <p className="text-muted text-sm mt-1">
-          Redux Toolkit state management history dashboard
-        </p>
+        <p className="text-muted text-sm mt-1">Forms history dashboard</p>
       </header>
 
       <div className="flex flex-wrap gap-4 mb-8">
@@ -34,7 +32,7 @@ export const App = () => {
           type="button"
           onClick={() => setActiveModal("uncontrolled")}
         >
-          Open Uncontrolled Form
+          Uncontrolled Form
         </button>
 
         <button
@@ -42,7 +40,7 @@ export const App = () => {
           type="button"
           onClick={() => setActiveModal("rhf")}
         >
-          Open React Hook Form
+          React Hook Form
         </button>
       </div>
 
@@ -121,8 +119,8 @@ export const App = () => {
         ) : (
           <div className="bg-card border border-border-custom rounded-book p-10 text-center shadow-book backdrop-blur-xs">
             <p className="text-sm text-muted italic">
-              No configuration profiles submitted to the Redux store yet. Open a
-              modal form to add entries.
+              No configuration profiles submitted yet. Open a modal form to add
+              entries.
             </p>
           </div>
         )}

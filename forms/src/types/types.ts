@@ -24,7 +24,7 @@ export const COUNTRIES = [
 export interface FormInputProps<T extends FieldValues> {
   id: string;
   label: string;
-  type?: "text" | "number" | "password";
+  type?: "text" | "number" | "password" | "email";
   error?: string;
   isRHF: boolean;
   register?: UseFormRegister<T>;

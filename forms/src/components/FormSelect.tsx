@@ -12,26 +12,39 @@ export const FormSelect = <T extends FieldValues>({
   selectRef,
 }: FormSelectProps<T>) => {
   const activeFocusClass = isRHF
-    ? "focus:border-emerald-500 focus:ring-emerald-500"
-    : "focus:border-indigo-500 focus:ring-indigo-500";
+    ? "focus:border-emerald-500 focus:ring-emerald-500 focus:ring-1"
+    : "focus:border-primary focus:ring-primary focus:ring-1";
 
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700" htmlFor={id}>
+    <div className="flex flex-col gap-1.5">
+      <label
+        className="text-sm font-semibold text-foreground/80 cursor-pointer select-none"
+        htmlFor={id}
+      >
         {label}
       </label>
       <select
         ref={isRHF ? undefined : selectRef}
         id={id}
         {...(isRHF && register ? register(name) : {})}
-        className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:ring-1 sm:text-sm border p-2 ${activeFocusClass}`}
+        className={`block w-full rounded-md bg-card border border-border-custom px-3 py-2 text-sm text-foreground shadow-xs outline-hidden transition-all cursor-pointer ${activeFocusClass}`}
       >
-        <option value="">Select...</option>
-        <option value="male">Male</option>
-        <option value="female">Female</option>
-        <option value="other">Other</option>
+        <option value="" className="bg-card text-foreground">
+          Select...
+        </option>
+        <option value="male" className="bg-card text-foreground">
+          Male
+        </option>
+        <option value="female" className="bg-card text-foreground">
+          Female
+        </option>
+        <option value="other" className="bg-card text-foreground">
+          Other
+        </option>
       </select>
-      <div className="text-red-500 text-xs mt-1 h-4">{error}</div>
+      <div className="text-red-500 text-xs font-medium min-h-[16px] mt-0.5">
+        {error}
+      </div>
     </div>
   );
 };
