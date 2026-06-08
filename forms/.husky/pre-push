@@ -1,0 +1,1 @@
+cd forms && npx vitest --run
