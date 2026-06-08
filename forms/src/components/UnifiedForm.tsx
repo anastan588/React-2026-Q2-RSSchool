@@ -155,7 +155,7 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     if (!result.success) {
       const formattedErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
-        const fieldKey = issue.path[0];
+        const fieldKey = issue.path[issue.path.length - 1] || issue.path[0];
         if (fieldKey !== undefined) {
           formattedErrors[fieldKey.toString()] = issue.message;
         }
