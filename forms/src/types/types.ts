@@ -8,7 +8,6 @@ export interface ModalProps {
   title: string;
   children: React.ReactNode;
 }
-
 export const COUNTRIES = [
   "United States",
   "United Kingdom",
@@ -17,8 +16,17 @@ export const COUNTRIES = [
   "France",
   "Japan",
   "Australia",
-  "Ukraine",
+  "Belarus",
   "Poland",
+  "Italy",
+  "Spain",
+  "Netherlands",
+  "Sweden",
+  "Norway",
+  "Finland",
+  "China",
+  "South Korea",
+  "Brazil",
 ];
 
 export interface FormInputProps<T extends FieldValues> {

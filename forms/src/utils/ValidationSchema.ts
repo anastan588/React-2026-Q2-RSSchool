@@ -34,7 +34,9 @@ export const profileSchema = z
     acceptTerms: z
       .boolean()
       .refine((val) => val === true, "You must accept terms"),
+
     image: z.string().min(1, "Profile image is required"),
+
     password: z.string().min(1, "Password is required"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     country: z

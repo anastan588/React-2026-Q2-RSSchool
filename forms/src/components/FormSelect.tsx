@@ -38,9 +38,6 @@ export const FormSelect = <T extends FieldValues>({
         <option value="female" className="bg-card text-foreground">
           Female
         </option>
-        <option value="other" className="bg-card text-foreground">
-          Other
-        </option>
       </select>
       <div className="text-red-500 text-xs font-medium min-h-[16px] mt-0.5">
         {error}

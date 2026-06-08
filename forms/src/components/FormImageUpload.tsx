@@ -7,8 +7,6 @@ export const FormImageUpload = <T extends FieldValues>({
   label,
   error,
   isRHF,
-  register,
-  name,
   onChange,
 }: FormImageUploadProps<T>) => {
   const fileButtonClass = isRHF
@@ -27,7 +25,6 @@ export const FormImageUpload = <T extends FieldValues>({
         type="file"
         onChange={onChange}
       />
-      {isRHF && register ? <input type="hidden" {...register(name)} /> : null}
       <div className="text-red-500 text-xs mt-1 h-4">{error}</div>
     </div>
   );

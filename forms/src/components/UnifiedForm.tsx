@@ -17,12 +17,13 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
 }) => {
   const isRHF = type === "rhf";
 
-  // --- React Hook Form ---
   const {
     register,
     handleSubmit,
     setValue,
     control,
+    setError,
+    clearErrors,
     formState: { errors: rhfErrors, isValid },
   } = useForm<FormValues>({
     resolver: zodResolver(profileSchema),
@@ -47,7 +48,6 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
   });
   const watchCountry = useWatch({ control, name: "country", defaultValue: "" });
 
-  // --- Uncontrolled Refs & States ---
   const [uncErrors, setUncErrors] = useState<Record<string, string>>({});
   const [uncPassValue, setUncPassValue] = useState<string>("");
   const [uncCountryQuery, setUncCountryQuery] = useState<string>("");
@@ -61,7 +61,6 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
   const passwordRef = useRef<HTMLInputElement>(null);
   const confirmPasswordRef = useRef<HTMLInputElement>(null);
 
-  // --- Image Converter ---
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -70,10 +69,23 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     const isInvalidSize = file.size > 2 * 1024 * 1024;
 
     if (isRHF) {
-      if (isInvalidType || isInvalidSize) {
-        setValue("image", "", { shouldValidate: true });
+      if (isInvalidType) {
+        setError("image", {
+          type: "manual",
+          message: "Only PNG or JPEG allowed",
+        });
+        setValue("image", "");
         return;
       }
+      if (isInvalidSize) {
+        setError("image", {
+          type: "manual",
+          message: "Image must be under 2MB",
+        });
+        setValue("image", "");
+        return;
+      }
+      clearErrors("image");
     } else {
       if (isInvalidType) {
         setUncErrors((prev) => ({
@@ -96,14 +108,16 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === "string") {
-        if (isRHF) setValue("image", reader.result, { shouldValidate: true });
-        else setUncImageBase64(reader.result);
+        if (isRHF) {
+          setValue("image", reader.result, { shouldValidate: true });
+        } else {
+          setUncImageBase64(reader.result);
+        }
       }
     };
     reader.readAsDataURL(file);
   };
 
-  // --- Uncontrolled Submit ---
   const handleUncontrolledSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const rawAge = ageRef.current?.value;
@@ -124,7 +138,6 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     if (!result.success) {
       const formattedErrors: Record<string, string> = {};
       result.error.issues.forEach((issue) => {
-        // Fix: Explicitly extract the first string identifier segment from the path array
         const fieldKey = issue.path[0];
         if (fieldKey !== undefined) {
           formattedErrors[fieldKey.toString()] = issue.message;
@@ -183,7 +196,6 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         register={register}
         selectRef={genderRef}
       />
-
       <FormImageUpload
         error={isRHF ? rhfErrors.image?.message : uncErrors.image}
         id="field-image"
@@ -205,8 +217,11 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
           register={register}
           type="password"
           onChange={(e) => {
-            if (isRHF) register("password").onChange(e);
-            else setUncPassValue(e.target.value);
+            if (isRHF) {
+              setValue("password", e.target.value, { shouldValidate: true });
+            } else {
+              setUncPassValue(e.target.value);
+            }
           }}
         />
         <PasswordIndicator value={isRHF ? watchPassword : uncPassValue} />
@@ -233,10 +248,19 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         name="country"
         register={register}
         value={isRHF ? watchCountry : uncCountryQuery}
-        onChangeUncontrolled={(e) => setUncCountryQuery(e.target.value)}
+        onChangeUncontrolled={(e) => {
+          if (isRHF) {
+            setValue("country", e.target.value, { shouldValidate: true });
+          } else {
+            setUncCountryQuery(e.target.value);
+          }
+        }}
         onSelect={(c) => {
-          if (isRHF) setValue("country", c, { shouldValidate: true });
-          else setUncCountryQuery(c);
+          if (isRHF) {
+            setValue("country", c, { shouldValidate: true });
+          } else {
+            setUncCountryQuery(c);
+          }
         }}
       />
 
@@ -263,7 +287,7 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
             : "bg-indigo-600 hover:bg-indigo-500"
         }`}
       >
-        {isRHF ? "Submit React Hook Form" : "Submit Uncontrolled Form"}
+        Submit
       </button>
     </form>
   );
