@@ -25,6 +25,17 @@ export const FormInput = <T extends FieldValues>({
   const isPasswordField = type === "password";
   const currentInputType = isPasswordField && isPasswordVisible ? "text" : type;
 
+  const rhfProps = isRHF && register ? register(name, { valueAsNumber }) : null;
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (rhfProps?.onChange) {
+      rhfProps.onChange(e);
+    }
+    if (onChange) {
+      onChange(e);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-1.5">
       <label
@@ -36,14 +47,14 @@ export const FormInput = <T extends FieldValues>({
 
       <div className="relative">
         <input
-          ref={isRHF ? undefined : inputRef}
-          id={id}
-          type={currentInputType}
-          {...(isRHF && register ? register(name, { valueAsNumber }) : {})}
+          {...(rhfProps || {})}
+          ref={isRHF && rhfProps ? rhfProps.ref : inputRef}
           className={`block w-full rounded-md bg-card/50 border border-border-custom px-3 py-2 text-sm text-foreground shadow-xs outline-hidden transition-all placeholder:text-muted ${activeFocusClass} ${
             isPasswordField ? "pr-10" : ""
           }`}
-          onChange={onChange}
+          id={id}
+          type={currentInputType}
+          onChange={handleInputChange}
         />
 
         {isPasswordField ? (

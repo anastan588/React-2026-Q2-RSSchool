@@ -9,7 +9,12 @@ import { FormInput } from "@/components/FormInput";
 import { FormSelect } from "@/components/FormSelect";
 import { PasswordIndicator } from "@/components/PasswordIndicator";
 import type { UnifiedFormProps } from "@/types/types";
-import { type FormValues, profileSchema } from "@/utils/ValidationSchema";
+import {
+  type FormValues,
+  type FormValuesInput,
+  type FormValuesOutput,
+  profileSchema,
+} from "@/utils/ValidationSchema";
 
 export const UnifiedForm: React.FC<UnifiedFormProps> = ({
   type,
@@ -24,13 +29,14 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
     control,
     setError,
     clearErrors,
+    trigger,
     formState: { errors: rhfErrors, isValid },
-  } = useForm<FormValues>({
+  } = useForm<FormValuesInput, object, FormValuesOutput>({
     resolver: zodResolver(profileSchema),
     mode: "onChange",
     defaultValues: {
       name: "",
-      age: undefined,
+      age: "",
       email: "",
       gender: undefined,
       acceptTerms: false,
@@ -38,12 +44,17 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
       password: "",
       confirmPassword: "",
       country: "",
-    } as unknown as FormValues,
+    } as unknown as FormValuesInput,
   });
 
   const watchPassword = useWatch({
     control,
     name: "password",
+    defaultValue: "",
+  });
+  const watchConfirmPassword = useWatch({
+    control,
+    name: "confirmPassword",
     defaultValue: "",
   });
   const watchCountry = useWatch({ control, name: "country", defaultValue: "" });
@@ -52,6 +63,12 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
   const [uncPassValue, setUncPassValue] = useState<string>("");
   const [uncCountryQuery, setUncCountryQuery] = useState<string>("");
   const [uncImageBase64, setUncImageBase64] = useState<string>("");
+
+  React.useEffect(() => {
+    if (isRHF && (watchPassword || watchConfirmPassword)) {
+      trigger(["password", "confirmPassword"]);
+    }
+  }, [watchPassword, watchConfirmPassword, trigger, isRHF]);
 
   const nameRef = useRef<HTMLInputElement>(null);
   const ageRef = useRef<HTMLInputElement>(null);
@@ -166,6 +183,7 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         name="name"
         register={register}
       />
+
       <FormInput
         valueAsNumber
         error={isRHF ? rhfErrors.age?.message : uncErrors.age}
@@ -177,6 +195,7 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         register={register}
         type="number"
       />
+
       <FormInput
         error={isRHF ? rhfErrors.email?.message : uncErrors.email}
         id="field-email"
@@ -196,6 +215,7 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         register={register}
         selectRef={genderRef}
       />
+
       <FormImageUpload
         error={isRHF ? rhfErrors.image?.message : uncErrors.image}
         id="field-image"
@@ -218,7 +238,11 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
           type="password"
           onChange={(e) => {
             if (isRHF) {
-              setValue("password", e.target.value, { shouldValidate: true });
+              setValue("password", e.target.value, {
+                shouldDirty: true,
+                shouldTouch: true,
+              });
+              trigger(["password", "confirmPassword"]);
             } else {
               setUncPassValue(e.target.value);
             }
@@ -238,6 +262,15 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         name="confirmPassword"
         register={register}
         type="password"
+        onChange={(e) => {
+          if (isRHF) {
+            setValue("confirmPassword", e.target.value, {
+              shouldDirty: true,
+              shouldTouch: true,
+            });
+            trigger(["password", "confirmPassword"]);
+          }
+        }}
       />
 
       <FormCountryAutocomplete
@@ -250,14 +283,22 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
         value={isRHF ? watchCountry : uncCountryQuery}
         onChangeUncontrolled={(e) => {
           if (isRHF) {
-            setValue("country", e.target.value, { shouldValidate: true });
+            setValue("country", e.target.value, {
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true,
+            });
           } else {
             setUncCountryQuery(e.target.value);
           }
         }}
         onSelect={(c) => {
           if (isRHF) {
-            setValue("country", c, { shouldValidate: true });
+            setValue("country", c, {
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true,
+            });
           } else {
             setUncCountryQuery(c);
           }
@@ -265,27 +306,27 @@ export const UnifiedForm: React.FC<UnifiedFormProps> = ({
       />
 
       <FormCheckbox
-        id="field-terms"
-        label="Accept Terms and Conditions"
-        name="acceptTerms"
-        isRHF={isRHF}
-        register={register}
         checkboxRef={termsRef}
         error={
           isRHF
             ? rhfErrors.acceptTerms?.message
             : uncErrors.acceptTerms || undefined
         }
+        id="field-terms"
+        isRHF={isRHF}
+        label="Accept Terms and Conditions"
+        name="acceptTerms"
+        register={register}
       />
 
       <button
-        type="submit"
-        disabled={isRHF ? !isValid : undefined}
         className={`w-full justify-center rounded-md py-2 px-4 text-sm font-semibold text-white shadow-sm transition-opacity ${
           isRHF
             ? "bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
             : "bg-indigo-600 hover:bg-indigo-500"
         }`}
+        disabled={isRHF ? !isValid : undefined}
+        type="submit"
       >
         Submit
       </button>

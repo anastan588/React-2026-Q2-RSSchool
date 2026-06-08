@@ -3,7 +3,7 @@ import { z } from "zod";
 import { COUNTRIES } from "@/types/types";
 import { validateEmailWithoutRegex } from "@/utils/FormHelpers";
 
-const GENDER_VALUES = ["male", "female", "other"] as const;
+const GENDER_VALUES = ["male", "female"] as const;
 
 export const profileSchema = z
   .object({
@@ -19,8 +19,13 @@ export const profileSchema = z
         );
       }, "First letter must be uppercase"),
     age: z
-      .number({ message: "Age must be a number" })
-      .nonnegative("Age cannot be negative"),
+      .union([z.number(), z.string()])
+      .transform((val) => (val === "" ? undefined : Number(val)))
+      .pipe(
+        z
+          .number({ message: "Age must be a number" })
+          .nonnegative("Age cannot be negative"),
+      ),
     email: z
       .string()
       .min(1, "Email is required")
@@ -34,9 +39,7 @@ export const profileSchema = z
     acceptTerms: z
       .boolean()
       .refine((val) => val === true, "You must accept terms"),
-
     image: z.string().min(1, "Profile image is required"),
-
     password: z.string().min(1, "Password is required"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
     country: z
@@ -51,4 +54,6 @@ export const profileSchema = z
     path: ["confirmPassword"],
   });
 
-export type FormValues = z.infer<typeof profileSchema>;
+export type FormValuesInput = z.input<typeof profileSchema>;
+export type FormValuesOutput = z.output<typeof profileSchema>;
+export type FormValues = FormValuesOutput;
