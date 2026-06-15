@@ -1,13 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { Country, YearData } from '../types';
+
+type ApiCountryPayload = {
+  iso_code?: string;
+  data: YearData[];
+};
+
+type ApiResponse = Record<string, ApiCountryPayload>;
 
 export const useCo2Data = () => {
   const [data, setData] = useState<Country[] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       setIsLoading(true);
       try {
         const res = await fetch('/data/owid-co2-data.json');
@@ -16,16 +23,13 @@ export const useCo2Data = () => {
           throw new Error('Failed to fetch CO2 data');
         }
 
-        const json = await res.json();
+        const json = (await res.json()) as ApiResponse;
 
-        const parsed = Object.entries(json).map(([countryName, countryData]) => {
-          const data = countryData as { iso_code?: string; data: YearData[] };
-          return {
-            id: countryName,
-            iso_code: data.iso_code,
-            data: data.data,
-          };
-        }) as Country[];
+        const parsed: Country[] = Object.entries(json).map(([countryName, countryData]) => ({
+          id: countryName,
+          iso_code: countryData.iso_code,
+          data: countryData.data,
+        }));
 
         setData(parsed);
         setError(null);
@@ -41,5 +45,5 @@ export const useCo2Data = () => {
     fetchData();
   }, []);
 
-  return { data, isLoading, error };
+  return useMemo(() => ({ data, isLoading, error }), [data, isLoading, error]);
 };

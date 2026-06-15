@@ -154,6 +154,7 @@ export const CountryList = memo(
               >
                 <CountryCard
                   country={item}
+                  key={item.id}
                   selectedYear={selectedYear}
                   selectedColumns={selectedColumns}
                 />
