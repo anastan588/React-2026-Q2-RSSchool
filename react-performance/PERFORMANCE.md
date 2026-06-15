@@ -1,35 +1,27 @@
-## Optimized Measurements
+# Performance Optimization Report
+
+## Baseline Measurements
 
 ### Interaction A: Sort countries
 
-- **Commit duration**: \_\_\_ s
-- **Render duration**: \_\_\_ ms
-- **Screenshot**: ![screenshot](image.png)
+- **Commit duration**: 4.5 s
+- **Render duration**: 578.3 ms
+- **Screenshot**: ![screenshot](react-performance\performance-starter\screenshots\baseline\ice_screenshot_20260615-205202.png)
 
 ### Interaction B: Search countries
 
-- **Commit duration**: \_\_\_ s
-- **Render duration**: \_\_\_ ms
-- **Screenshot**: ![screenshot](image.png)
+- **Commit duration**: 2.8 s
+- **Render duration**: 270 ms
+- **Screenshot**: ![screenshot](react-performance\performance-starter\screenshots\baseline\ice_screenshot_20260615-205615.png)
 
 ### Interaction C: Change year
 
-- **Commit duration**: \_\_\_ s
-- **Render duration**: \_\_\_ ms
-- **Screenshot**: ![screenshot](image.png)
+- **Commit duration**: 3.5 s
+- **Render duration**: 35 ms
+- **Screenshot**: ![screenshot](react-performance\performance-starter\screenshots\baseline\ice_screenshot_20260615-205743.png)
 
 ### Interaction D: Toggle column
 
-- **Commit duration**: \_\_\_ s
-- **Render duration**: \_\_\_ ms
-- **Screenshot**: ![screenshot](image.png)
-
-## Summary of Improvements
-
-| Interaction      | Baseline (ms) | Optimized (ms) | Improvement |
-| ---------------- | ------------- | -------------- | ----------- |
-| Sort countries   | \_\_\_        | \_\_\_         | \_\_\_%     |
-| Search countries | \_\_\_        | \_\_\_         | \_\_\_%     |
-| Change year      | \_\_\_        | \_\_\_         | \_\_\_%     |
-| Toggle column    | \_\_\_        | \_\_\_         | \_\_\_%     |
-| **Average**      | **\_\_\_**    | **\_\_\_**     | **\_\_\_%** |
+- **Commit duration**: 1.7 s
+- **Render duration**: 39.2 ms
+- **Screenshot**: ![screenshot](react-performance\performance-starter\screenshots\baseline\ice_screenshot_20260615-210038.png)
