@@ -1,3 +1,46 @@
-.countryList {
-  padding: 16px;
+.countryListContainer {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  margin-top: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  isolation: isolate;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+}
+
+.scrollTrack {
+  width: 100%;
+  position: relative;
+}
+
+.slidingWindow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: 100%;
+}
+
+.rowWrapper {
+  box-sizing: border-box;
+  width: 100%;
+  height: auto;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.noResults {
+  text-align: center;
+  padding: 48px;
+  color: #64748b;
+  font-weight: 500;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  margin-top: 16px;
 }
