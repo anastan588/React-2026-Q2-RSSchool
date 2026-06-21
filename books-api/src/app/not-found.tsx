@@ -1,13 +1,12 @@
-import { Link, useNavigate } from 'react-router';
+'use client'; // Обязательно, так как используются клиентские хуки навигации
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import Button from '@/components/Button';
-import useSearchStorage from '@/hooks/StorageHook';
 
-export const NotFound = () => {
-  const navigate = useNavigate();
-  const { storagePage } = useSearchStorage();
-
-  const mainAppReturnUrl = storagePage > 1 ? `/?page=${storagePage}` : '/';
+export default function NotFound() {
+  const router = useRouter();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground px-6 text-center transition-colors duration-500">
@@ -21,12 +20,12 @@ export const NotFound = () => {
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Button
             className="px-6 py-3 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 shadow-xs active:scale-98 cursor-pointer"
-            onClick={() => navigate(-1)}
+            onClick={() => router.back()}
           >
             Go Back
           </Button>
 
-          <Link to={mainAppReturnUrl} className="w-full sm:w-auto">
+          <Link className="w-full sm:w-auto" href="/">
             <Button className="w-full px-6 py-3 text-sm font-semibold rounded-xl border transition-all duration-300 ease-out bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 shadow-xs hover:shadow-md active:scale-98 cursor-pointer">
               Return to Main App
             </Button>
@@ -35,6 +34,4 @@ export const NotFound = () => {
       </div>
     </div>
   );
-};
-
-export default NotFound;
+}

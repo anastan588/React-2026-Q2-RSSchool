@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import Link from 'next/link'; // ЗАМЕНЕНО с react-router
 
 import Button from '@/components/Button';
 
@@ -42,7 +42,8 @@ export const About = () => {
         </section>
 
         <div className="flex justify-center gap-3">
-          <Link to="/">
+          {/* ЗАМЕНЕНО: Свойство 'to' заменено на 'href' для Next.js */}
+          <Link href="/">
             <Button className="px-6 py-3 text-sm font-bold rounded-xl bg-primary text-white hover:brightness-110 transition-all shadow-md active:scale-98">
               Back to main page
             </Button>

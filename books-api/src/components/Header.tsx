@@ -1,4 +1,6 @@
-import { Link } from 'react-router';
+'use client'; // Обязательно, так как компонент содержит интерактивные элементы управления поиском и темой
+
+import Link from 'next/link'; // ЗАМЕНЕНО с react-router
 
 import SearchField from '@/components/SearchField';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -21,9 +23,10 @@ export const Header = ({ currentQuery, handleSearch }: HeaderProps) => {
         </div>
 
         <nav className="shrink-0 w-full sm:w-auto flex justify-end">
+          {/* ЗАМЕНЕНО: Свойство 'to' заменено на 'href' для Next.js */}
           <Link
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl border transition-all duration-400 ease-out active:scale-96 shadow-xs bg-card/50 backdrop-blur-md border-border-custom text-foreground hover:bg-card hover:text-primary hover:border-primary/30 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
-            to="/about"
+            href="/about"
           >
             <span>About the App</span>
           </Link>

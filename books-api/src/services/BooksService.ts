@@ -6,9 +6,10 @@ const BASE_URL = 'https://openlibrary.org';
 const COVERS_BASE_URL = 'https://covers.openlibrary.org/b';
 const ITEMS_PER_PAGE = 20;
 
+// Безопасное и правильное считывание TTL переменной для Next.js
 const getCacheTtl = (): number => {
-  const metaEnv = import.meta.env as ImportMetaEnv & { VITE_CACHE_TTL?: string };
-  const ttl = metaEnv.VITE_CACHE_TTL;
+  // В Next.js все переменные безопасно хранятся в process.env
+  const ttl = process.env.NEXT_PUBLIC_CACHE_TTL;
   return ttl ? Number(ttl) : 120;
 };
 
@@ -23,7 +24,9 @@ const getCoverUrl = (doc: OpenLibraryDoc): string => {
     return `${COVERS_BASE_URL}/olid/${doc.edition_key[0]}-M.jpg`;
   }
 
-  return './../assets/mock-book.jpg';
+  // Вместо относительного пути для Vite, в Next.js статические заглушки
+  // возвращаются как пустая строка, чтобы компонент <Image> переключился на дефолтную картинку.
+  return '';
 };
 
 export const booksApi = createApi({
@@ -118,7 +121,7 @@ export const booksApi = createApi({
           title: data.title ?? 'Unknown Title',
           author: data.authors ? 'Details Loaded' : 'Unknown Author',
           category: data.subjects?.[0] ?? 'General',
-          cover: data.covers?.[0] ? `${COVERS_BASE_URL}/id/${data.covers[0]}-M.jpg` : './../assets/mock-book.jpg',
+          cover: data.covers?.[0] ? `${COVERS_BASE_URL}/id/${data.covers[0]}-M.jpg` : '',
           openLibraryUrl: `${BASE_URL}${data.key ?? bookId}`,
           description: parsedDescription,
           publishDate: data.first_publish_date ?? 'Unknown Date',

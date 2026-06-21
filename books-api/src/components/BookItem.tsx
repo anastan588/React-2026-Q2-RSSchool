@@ -1,4 +1,7 @@
+'use client'; // Обязательно, так как используется хук useState и обработчик onError
+
 import { useState } from 'react';
+import Image from 'next/image'; // ДОБАВЛЕНО: встроенный компонент оптимизации Next.js
 
 import neutralBookImage from '@/assets/mock-book.jpg';
 import BookSelectionCheckbox from '@/components/BookSelect';
@@ -13,6 +16,8 @@ const BookItem = ({ book }: BookItemProps) => {
     setHasError(true);
   };
 
+  // Если обложки нет или произошла ошибка загрузки, используем объект статического изображения Next.js,
+  // иначе передаем внешнюю строку-URL обложки.
   const displayCover = !cover || hasError ? neutralBookImage : cover;
 
   return (
@@ -22,12 +27,17 @@ const BookItem = ({ book }: BookItemProps) => {
     >
       <div className="book-cover-wrapper bg-card overflow-hidden rounded-lg aspect-[3/4] relative shadow-book">
         <div className="book-spine" />
-        <img
+
+        {/* ЗАМЕНЕНО: Обычный <img> заменен на оптимизированный <Image> */}
+        <Image
           alt={`Cover for ${title}`}
           className="book-cover-img w-full h-full object-cover transition-transform duration-300 group-hover:scale-102"
-          loading="lazy"
           src={displayCover}
           onError={handleError}
+          // Так как обложка лежит внутри контейнера с aspect-[3/4] и классами w-full h-full,
+          // используем свойство fill для адаптивного заполнения родительского блока.
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-white/20 pointer-events-none" />
       </div>

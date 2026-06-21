@@ -1,17 +1,25 @@
-import { useNavigate, useSearchParams } from 'react-router';
+'use client'; // Обязательно, так как используются клиентские хуки и события клика
+
+import { useRouter, useSearchParams } from 'next/navigation'; // ЗАМЕНЕНО с react-router
 
 import Button from '@/components/Button';
 import type { PaginationProps } from '@/types/types';
 
 export const Pagination = ({ current, total }: Omit<PaginationProps, 'onPageChange'>) => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const searchParams = useSearchParams();
+  const router = useRouter(); // В Next.js вместо useNavigate используется useRouter
 
   if (total <= 1) return null;
+
   const handlePageChange = (targetPage: number) => {
-    const nextParams = new URLSearchParams(searchParams.toString());
+    // Безопасно преобразуем параметры в строку, обрабатывая возможный null на сервере
+    const currentParamsString = searchParams ? searchParams.toString() : '';
+    const nextParams = new URLSearchParams(currentParamsString);
+
     nextParams.set('page', String(targetPage));
-    navigate(`/?${nextParams.toString()}`);
+
+    // В Next.js используем push для перехода по URL-адресу
+    router.push(`/?${nextParams.toString()}`);
   };
 
   return (

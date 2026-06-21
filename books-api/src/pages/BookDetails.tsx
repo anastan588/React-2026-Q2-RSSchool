@@ -1,7 +1,12 @@
-import React from 'react';
-import { useDispatch } from 'react-redux';
-import { useNavigate, useParams, useSearchParams } from 'react-router';
+'use client'; // Обязательно, так как используются клиентские хуки, события и Redux
 
+import React, { useState } from 'react';
+import Image from 'next/image'; // ДОБАВЛЕНО: встроенный компонент Next.js
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDispatch } from 'react-redux';
+
+// ЗАМЕНЕНО: Импортируем заглушку напрямую как статический ресурс Next.js
+import neutralBookImage from '@/assets/mock-book.jpg';
 import BookSelectionCheckbox from '@/components/BookSelect';
 import Button from '@/components/Button';
 import ErrorMessage from '@/components/ErrorMessage';
@@ -10,13 +15,19 @@ import RefreshCacheButton from '@/components/RefreshCacheButton';
 import { booksApi, useFetchBookDetailsQuery } from '@/services/BooksService';
 import getErrorMessage from '@/utils/getErrorMessage';
 
-const neutralBookImage = new URL('@/assets/mock-book.jpg', import.meta.url).href;
+interface BookDetailsProps {
+  id: string;
+}
 
-export const BookDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const dispatch = useDispatch();
+
+  // Локальный стейт для отслеживания ошибок загрузки внешних обложек
+  const [imageError, setImageError] = useState(false);
+
+  const safeParams = searchParams || new URLSearchParams();
 
   const {
     data: book,
@@ -29,8 +40,8 @@ export const BookDetails: React.FC = () => {
   });
 
   const handleClose = (): void => {
-    const currentSearch = searchParams.toString();
-    navigate(currentSearch ? `/?${currentSearch}` : '/');
+    const currentSearch = safeParams.toString();
+    router.push(currentSearch ? `/?${currentSearch}` : '/');
   };
 
   const handleManualRefresh = (): void => {
@@ -48,6 +59,10 @@ export const BookDetails: React.FC = () => {
       </div>
     );
   }
+
+  // Вычисляем обложку. Если внешней ссылки нет или она битая — подставляем объект заглушки
+  const displayCover =
+    !book?.cover || book.cover.includes('mock-book.jpg') || imageError ? neutralBookImage : book.cover;
 
   return (
     <div className="h-full flex flex-col bg-card/90 backdrop-blur-xl border-l border-border-custom shadow-2xl relative">
@@ -92,13 +107,20 @@ export const BookDetails: React.FC = () => {
               isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
             }`}
           >
+            {/* Обертка для сохранения пропорций и центрирования изображения */}
             <div className="flex justify-center">
-              <img
-                alt={book.title}
-                className="h-64 object-contain shadow-book rounded-lg bg-card/40 border border-border-custom transition-all"
-                loading="lazy"
-                src={!book.cover || book.cover.includes('mock-book.jpg') ? neutralBookImage : book.cover}
-              />
+              <div className="h-64 aspect-[3/4] relative overflow-hidden shadow-book rounded-lg bg-card/40 border border-border-custom transition-all">
+                {/* ЗАМЕНЕНО: вместо <img> используем <Image> с поддержкой StaticImageData */}
+                <Image
+                  fill
+                  priority // Добавляем приоритет загрузки, так как это ключевое изображение боковой панели
+                  alt={book.title}
+                  className="object-contain w-full h-full"
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  src={displayCover}
+                  onError={() => setImageError(true)}
+                />
+              </div>
             </div>
 
             <div className="flex flex-col gap-1 text-left">
