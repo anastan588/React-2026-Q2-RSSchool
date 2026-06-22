@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server';
 
-import { BookDetails } from '@/pages/BookDetails';
+import { BookDetails } from '@/components/BookDetails';
 import type { ExtendedBook } from '@/types/types';
 
 interface DetailsPanelShellProps {
