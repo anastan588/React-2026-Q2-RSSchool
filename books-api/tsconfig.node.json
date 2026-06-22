@@ -25,11 +25,6 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": [
-    "vite.config.ts",
-    "next.config.mjs",
-    "./dist/types/**/*.ts",
-    "./next-env.d.ts"
-  ],
+  "include": ["vite.config.ts", "next.config.mjs", "./dist/types/**/*.ts", "./next-env.d.ts"],
   "exclude": ["./node_modules"]
 }
