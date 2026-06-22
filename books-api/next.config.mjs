@@ -11,11 +11,15 @@ const nextConfig = {
   basePath: '',
 
   images: {
-    // Включаем встроенную оптимизацию и разрешаем домен Open Library
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'covers.openlibrary.org',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'openlibrary.org',
         pathname: '/**',
       },
     ],
@@ -23,6 +27,7 @@ const nextConfig = {
 
   // ИСПРАВЛЕНО ДЛЯ NEXT.JS 16+: Настройка путей для дефолтного сборщика Turbopack
   turbopack: {
+    root: __dirname,
     resolveAlias: {
       '@/': './src/',
     },

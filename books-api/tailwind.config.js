@@ -1,12 +1,14 @@
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx}', // ДОБАВЛЕНО: для папки app в корне
-    './src/app/**/*.{js,ts,jsx,tsx}', // ДОБАВЛЕНО: для папки app внутри src
-    './src/**/*.{js,ts,jsx,tsx}', // Ваши старые компоненты и страницы
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {},
   },
   plugins: [],
 };
+
+export default config;

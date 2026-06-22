@@ -1,62 +1,78 @@
 'use client';
 
-import { use, useSyncExternalStore } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
+import { useSearchParams } from 'next/navigation';
 
-import App from '@/App';
-import NotFound from '@/app/not-found';
-import Loader from '@/components/Loader';
-import About from '@/pages/About';
-import BookDetails from '@/pages/BookDetails';
+import useSearchStorage from '@/hooks/StorageHook';
+import { booksApi, useSearchBooksQuery } from '@/services/BooksService';
+import { useAppDispatch, useAppSelector } from '@/state/store';
+import type { Book } from '@/types/types';
 
+interface ServerData {
+  books: Book[];
+  totalPages: number;
+}
 interface ClientOnlyProps {
-  params: Promise<{ slug?: string[] }>;
+  initialServerData: ServerData;
+  serverQuery: string;
+  serverPage: string;
 }
 
-// Пустые функции-заглушки для подписки, так как сервер/клиент не меняются в процессе жизни страницы
 const emptySubscribe = () => () => {};
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
-export const ClientOnly = ({ params }: ClientOnlyProps) => {
-  // 1. Распаковываем параметры маршрута
-  const unwrappedParams = use(params);
-  const slug = unwrappedParams.slug || [];
+export const ClientOnly = ({ initialServerData, serverQuery, serverPage }: ClientOnlyProps) => {
+  const searchParams = useSearchParams();
+  const dispatch = useAppDispatch();
+  const { setSearchQuery, setStoragePage } = useSearchStorage();
 
-  // 2. Определяем, где мы находимся (сервер или клиент) без useState и useEffect.
-  // На сервере вернет false, в браузере — true. Без каскадных рендеров!
   const isMounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot);
 
-  // 3. До полной загрузки в браузере рендерим нейтральное состояние.
-  if (!isMounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader query="books" />
-      </div>
-    );
-  }
+  const safeParams = searchParams || new URLSearchParams();
+  const urlQueryStr = safeParams.get('q') || '';
+  const urlPageStr = safeParams.get('page') || '1';
 
-  // 4. Логика роутинга (выполняется строго на клиенте после успешной гидратации)
+  const queryArg = urlQueryStr || 'A.A.';
+  const pageArg = parseInt(urlPageStr, 10) || 1;
 
-  // Корневой маршрут: "/"
-  if (slug.length === 0) {
-    return <App />;
-  }
+  const isMatchingServerData = initialServerData && urlQueryStr === serverQuery && urlPageStr === serverPage;
 
-  // Вложенный маршрут: "/details/:id" -> ["details", "id_книги"]
-  if (slug[0] === 'details' && slug.length === 2) {
-    const bookId = slug[1];
-    return (
-      <App>
-        <BookDetails id={bookId} />
-      </App>
-    );
-  }
+  const hasServerDataInStore = useAppSelector((state) => {
+    const cacheKey = booksApi.endpoints.searchBooks.select({
+      query: serverQuery || 'A.A.',
+      page: parseInt(serverPage, 10) || 1,
+    })(state);
+    return !!cacheKey?.data?.books?.length;
+  });
 
-  // Маршрут: "/about" -> ["about"]
-  if (slug[0] === 'about' && slug.length === 1) {
-    return <About />;
-  }
+  useEffect(() => {
+    if (isMounted && !hasServerDataInStore && initialServerData.books.length > 0) {
+      dispatch(
+        booksApi.util.upsertQueryData(
+          'searchBooks',
+          { query: serverQuery || 'A.A.', page: parseInt(serverPage, 10) || 1 },
+          { books: initialServerData.books, totalPages: initialServerData.totalPages },
+        ),
+      );
+    }
+  }, [isMounted, hasServerDataInStore, initialServerData, serverQuery, serverPage, dispatch]);
 
-  // Все остальные несовпадающие пути -> Глобальная 404
-  return <NotFound />;
+  useSearchBooksQuery(
+    { query: queryArg, page: pageArg },
+    { skip: !isMounted || isMatchingServerData || hasServerDataInStore },
+  );
+
+  useEffect(() => {
+    if (isMounted) {
+      setSearchQuery(urlQueryStr);
+      setStoragePage(pageArg);
+    }
+  }, [isMounted, urlQueryStr, pageArg, setSearchQuery, setStoragePage]);
+
+  if (!isMounted) return null;
+
+  return <div className="hydration-context-holder hidden" style={{ display: 'none' }} />;
 };
+
+export default ClientOnly;

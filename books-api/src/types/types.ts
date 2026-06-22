@@ -1,4 +1,4 @@
-import type { ChangeEvent, ReactNode } from 'react';
+import type { ChangeEvent, ComponentPropsWithoutRef, ReactNode } from 'react';
 
 export interface AppState {
   query: string;
@@ -15,11 +15,11 @@ export interface ButtonProps {
   disabled?: boolean;
 }
 
-export interface InputProps {
+export interface InputProps extends ComponentPropsWithoutRef<'input'> {
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
-  type?: 'text' | 'search' | 'number';
+  type?: string;
   className?: string;
 }
 
@@ -62,10 +62,14 @@ export interface BookItemProps {
   book: Book;
 }
 
+// src/types/types.ts
+
 export interface BookListProps {
   books: Book[];
   hasError: boolean;
-  onBookSelect?: (book: Book) => void;
+  serverPage?: string; // ДОБАВЛЕНО
+  serverQuery?: string; // ДОБАВЛЕНО
+  activeBookId?: string; // ДОБАВЛЕНО (для подсветки выбранной книги)
 }
 
 export interface LoaderProps {

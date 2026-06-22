@@ -1,11 +1,11 @@
-'use client'; // Обязательно, так как используются клиентские хуки, события и Redux
+// pages/BookDetails.tsx
+'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image'; // ДОБАВЛЕНО: встроенный компонент Next.js
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 
-// ЗАМЕНЕНО: Импортируем заглушку напрямую как статический ресурс Next.js
 import neutralBookImage from '@/assets/mock-book.jpg';
 import BookSelectionCheckbox from '@/components/BookSelect';
 import Button from '@/components/Button';
@@ -13,61 +13,85 @@ import ErrorMessage from '@/components/ErrorMessage';
 import Loader from '@/components/Loader';
 import RefreshCacheButton from '@/components/RefreshCacheButton';
 import { booksApi, useFetchBookDetailsQuery } from '@/services/BooksService';
+import type { ExtendedBook } from '@/types/types';
 import getErrorMessage from '@/utils/getErrorMessage';
 
 interface BookDetailsProps {
   id: string;
+  initialData: ExtendedBook | null; // Серверные данные
 }
 
-export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
+export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
 
-  // Локальный стейт для отслеживания ошибок загрузки внешних обложек
   const [imageError, setImageError] = useState(false);
+
+  // ИСПРАВЛЕНО: Синхронизируем стейт ошибки картинки во время рендера при смене книги.
+  // Это полностью устраняет useEffect, каскадные рендеры и ошибку "set-state-in-effect"!
+  const [prevId, setPrevId] = useState(id);
+
+  if (id !== prevId) {
+    setPrevId(id);
+    setImageError(false);
+  }
 
   const safeParams = searchParams || new URLSearchParams();
 
+  // RTK Query: Используем серверные данные. Если они есть — пропускаем начальный запрос.
   const {
-    data: book,
+    data: clientBook,
     error,
     isLoading,
     isFetching,
-    refetch,
   } = useFetchBookDetailsQuery(id ?? '', {
-    skip: !id,
+    skip: !id || !!initialData, // Пропускаем клиентский fetch, если сервер уже дал данные
   });
 
+  // Используем триггер ленивого запроса для безопасного ручного обновления по кнопке
+  const [triggerFetchDetails, lazyResult] = booksApi.useLazyFetchBookDetailsQuery();
+
+  // Приоритет отдаем данным из Redux (если обновились/кэшировались), иначе — серверным initialData
+  const book = lazyResult.data || clientBook || initialData;
+  const currentIsFetching = isFetching || lazyResult.isFetching;
+  const currentError = error || lazyResult.error;
+
   const handleClose = (): void => {
-    const currentSearch = safeParams.toString();
-    router.push(currentSearch ? `/?${currentSearch}` : '/');
+    const params = new URLSearchParams(safeParams.toString());
+    params.delete('selectedBookId');
+    const currentSearch = params.toString();
+
+    // Мягко и мгновенно убираем панель из URL, не дергая скролл страницы
+    router.replace(currentSearch ? `/?${currentSearch}` : '/', { scroll: false });
   };
 
   const handleManualRefresh = (): void => {
     if (id) {
+      // 1. Очищаем тэги в сторе
       dispatch(booksApi.util.invalidateTags([{ type: 'BookDetails', id }]));
+      // 2. Безопасно запрашиваем новые данные через триггер ленивого запроса
+      triggerFetchDetails(id);
     }
   };
 
-  const errorMessage = getErrorMessage(error);
+  const errorMessage = getErrorMessage(currentError);
 
-  if (isLoading) {
+  if (isLoading && !book) {
     return (
       <div className="h-full flex items-center justify-center p-12" data-testid="details-loader">
-        <Loader query="book detailes" />
+        <Loader query="book details" />
       </div>
     );
   }
 
-  // Вычисляем обложку. Если внешней ссылки нет или она битая — подставляем объект заглушки
   const displayCover =
     !book?.cover || book.cover.includes('mock-book.jpg') || imageError ? neutralBookImage : book.cover;
 
   return (
-    <div className="h-full flex flex-col bg-card/90 backdrop-blur-xl border-l border-border-custom shadow-2xl relative">
+    <div className="h-full flex flex-col bg-card/90 backdrop-blur-xl border-l border-border-custom shadow-2xl relative animate-in slide-in-from-right duration-300">
       {!errorMessage && book ? (
-        <RefreshCacheButton isFetching={isFetching} variant="details" onRefresh={handleManualRefresh} />
+        <RefreshCacheButton id={id} isFetching={currentIsFetching} variant="details" onRefresh={handleManualRefresh} />
       ) : null}
 
       <header className="flex items-center justify-between p-6 border-b border-border-custom transition-colors duration-300">
@@ -83,9 +107,9 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
       </header>
 
       <div className="grow overflow-y-auto relative">
-        {errorMessage && !isLoading && !isFetching ? (
+        {errorMessage && !book ? (
           <div className="p-8 text-center flex flex-col items-center justify-center h-full gap-4">
-            <ErrorMessage message={errorMessage} onRetry={refetch} />
+            <ErrorMessage message={errorMessage} onRetry={handleManualRefresh} />
             <Button
               className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold"
               onClick={handleClose}
@@ -95,25 +119,25 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
           </div>
         ) : null}
 
-        {isFetching && !errorMessage ? (
+        {currentIsFetching && !book ? (
           <div className="absolute inset-0 flex items-center justify-center bg-card/20 backdrop-blur-xs z-30 animate-in fade-in duration-200">
-            <Loader query="book detailes" />
+            <Loader query="book details" />
           </div>
         ) : null}
 
-        {!errorMessage && book ? (
+        {book ? (
           <main
             className={`p-6 space-y-6 transition-all duration-300 ${
-              isFetching ? 'opacity-30 animate-pulse pointer-events-none' : 'opacity-100'
+              currentIsFetching && !clientBook && !lazyResult.data
+                ? 'opacity-30 animate-pulse pointer-events-none'
+                : 'opacity-100'
             }`}
           >
-            {/* Обертка для сохранения пропорций и центрирования изображения */}
             <div className="flex justify-center">
               <div className="h-64 aspect-[3/4] relative overflow-hidden shadow-book rounded-lg bg-card/40 border border-border-custom transition-all">
-                {/* ЗАМЕНЕНО: вместо <img> используем <Image> с поддержкой StaticImageData */}
                 <Image
                   fill
-                  priority // Добавляем приоритет загрузки, так как это ключевое изображение боковой панели
+                  priority
                   alt={book.title}
                   className="object-contain w-full h-full"
                   sizes="(max-width: 768px) 100vw, 300px"
@@ -144,7 +168,7 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
                   Setting Locations
                 </span>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {book.places.length > 0 ? (
+                  {book.places && book.places.length > 0 ? (
                     book.places.map((place) => (
                       <span
                         key={place}
@@ -160,6 +184,7 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
               </div>
             </div>
 
+            {/* Чекбокс выделения книги в глобальную корзину */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-border-custom bg-card/30 backdrop-blur-xs transition-all duration-300">
               <div className="flex flex-col text-left">
                 <span className="text-xs font-bold uppercase tracking-wider text-muted">Status</span>
@@ -171,19 +196,22 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id }) => {
               </div>
             </div>
 
-            <div className="border-t border-border-custom pt-4 text-left transition-colors duration-300">
-              <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
-                Open Library Source Registry
-              </span>
-              <a
-                className="text-primary underline text-xs break-all hover:brightness-110 font-medium transition-all"
-                href={book.openLibraryUrl}
-                rel="noreferrer"
-                target="_blank"
-              >
-                {book.openLibraryUrl}
-              </a>
-            </div>
+            {/* Ссылка на официальный реестр Open Library */}
+            {book.openLibraryUrl ? (
+              <div className="border-t border-border-custom pt-4 text-left transition-colors duration-300">
+                <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
+                  Open Library Source Registry
+                </span>
+                <a
+                  className="text-primary underline text-xs break-all hover:text-primary/80 transition-colors"
+                  href={book.openLibraryUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {book.openLibraryUrl}
+                </a>
+              </div>
+            ) : null}
           </main>
         ) : null}
       </div>

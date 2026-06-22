@@ -1,12 +1,24 @@
+'use client';
+
 import { type ChangeEvent, type SyntheticEvent, useState } from 'react';
 
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import type { SearchFieldProps } from '@/types/types';
 
-const SearchField = ({ initialValue, onSearch }: SearchFieldProps) => {
+export const SearchField = ({ initialValue, onSearch }: SearchFieldProps) => {
   const [localQuery, setLocalQuery] = useState(initialValue || '');
   const [showError, setShowError] = useState(false);
+
+  // Храним значение предыдущего пропса вместо использования useEffect
+  const [prevInitialValue, setPrevInitialValue] = useState(initialValue);
+
+  // Мгновенное обновление стейта во время рендера при изменении URL
+  if (initialValue !== prevInitialValue) {
+    setPrevInitialValue(initialValue);
+    setLocalQuery(initialValue || '');
+    setShowError(false);
+  }
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { value } = e.target;
@@ -32,10 +44,13 @@ const SearchField = ({ initialValue, onSearch }: SearchFieldProps) => {
   };
 
   return (
-    <>
+    <div className="w-full">
       <form className="flex gap-3" onSubmit={handleSubmit}>
         <div className="relative flex-1">
           <Input
+            // ДОБАВЛЕНО: Атрибут name="q" гарантирует бесшовную работу
+            // с FormData в Next.js Server Actions на бэкенде
+            name="q"
             className={`transition-all duration-300 backdrop-blur-md rounded-xl bg-card/80 text-foreground border-border-custom placeholder:text-slate-500 dark:placeholder:text-white/70 ${
               showError
                 ? 'border-red-500/80 ring-4 ring-red-500/10 text-red-600 dark:text-red-400 dark:border-red-500/50'
@@ -62,7 +77,7 @@ const SearchField = ({ initialValue, onSearch }: SearchFieldProps) => {
           Please enter at least 3 characters for an accurate search
         </p>
       ) : null}
-    </>
+    </div>
   );
 };
 

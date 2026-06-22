@@ -1,4 +1,4 @@
-import Link from 'next/link'; // ЗАМЕНЕНО с react-router
+import Link from 'next/link';
 
 import Button from '@/components/Button';
 

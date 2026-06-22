@@ -1,1 +1,1 @@
-cd books-api && npx vitest --run
+cd books-api && npm run lint && npm run format:fix
