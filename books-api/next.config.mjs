@@ -1,12 +1,14 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Папка сборки приложения
   distDir: './dist',
   basePath: '',
 
@@ -25,19 +27,21 @@ const nextConfig = {
     ],
   },
 
-  // ИСПРАВЛЕНО ДЛЯ NEXT.JS 16+: Настройка путей для дефолтного сборщика Turbopack
   turbopack: {
     root: __dirname,
     resolveAlias: {
-      '@/': './src/',
+      '@': path.resolve(__dirname, './src'),
     },
   },
 
-  // Настройка путей для Webpack (необходима для совместимости с Jest / Vitest)
+  experimental: {
+    serverExternalPackages: ['next-intl'],
+  },
+
   webpack: (config) => {
     config.resolve.alias['@'] = path.resolve(__dirname, './src');
     return config;
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

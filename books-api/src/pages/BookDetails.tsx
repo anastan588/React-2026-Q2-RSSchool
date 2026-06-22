@@ -1,9 +1,9 @@
-// pages/BookDetails.tsx
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useDispatch } from 'react-redux';
 
 import neutralBookImage from '@/assets/mock-book.jpg';
@@ -18,18 +18,16 @@ import getErrorMessage from '@/utils/getErrorMessage';
 
 interface BookDetailsProps {
   id: string;
-  initialData: ExtendedBook | null; // Серверные данные
+  initialData: ExtendedBook | null;
 }
 
-export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => {
+export const BookDetails = ({ id, initialData }: BookDetailsProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
+  const t = useTranslations('BookDetails');
 
   const [imageError, setImageError] = useState(false);
-
-  // ИСПРАВЛЕНО: Синхронизируем стейт ошибки картинки во время рендера при смене книги.
-  // Это полностью устраняет useEffect, каскадные рендеры и ошибку "set-state-in-effect"!
   const [prevId, setPrevId] = useState(id);
 
   if (id !== prevId) {
@@ -39,20 +37,17 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
 
   const safeParams = searchParams || new URLSearchParams();
 
-  // RTK Query: Используем серверные данные. Если они есть — пропускаем начальный запрос.
   const {
     data: clientBook,
     error,
     isLoading,
     isFetching,
   } = useFetchBookDetailsQuery(id ?? '', {
-    skip: !id || !!initialData, // Пропускаем клиентский fetch, если сервер уже дал данные
+    skip: !id || !!initialData,
   });
 
-  // Используем триггер ленивого запроса для безопасного ручного обновления по кнопке
   const [triggerFetchDetails, lazyResult] = booksApi.useLazyFetchBookDetailsQuery();
 
-  // Приоритет отдаем данным из Redux (если обновились/кэшировались), иначе — серверным initialData
   const book = lazyResult.data || clientBook || initialData;
   const currentIsFetching = isFetching || lazyResult.isFetching;
   const currentError = error || lazyResult.error;
@@ -61,16 +56,12 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
     const params = new URLSearchParams(safeParams.toString());
     params.delete('selectedBookId');
     const currentSearch = params.toString();
-
-    // Мягко и мгновенно убираем панель из URL, не дергая скролл страницы
     router.replace(currentSearch ? `/?${currentSearch}` : '/', { scroll: false });
   };
 
   const handleManualRefresh = (): void => {
     if (id) {
-      // 1. Очищаем тэги в сторе
       dispatch(booksApi.util.invalidateTags([{ type: 'BookDetails', id }]));
-      // 2. Безопасно запрашиваем новые данные через триггер ленивого запроса
       triggerFetchDetails(id);
     }
   };
@@ -95,9 +86,9 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
       ) : null}
 
       <header className="flex items-center justify-between p-6 border-b border-border-custom transition-colors duration-300">
-        <h2 className="font-bold text-foreground text-lg truncate pr-4">Book Profile</h2>
+        <h2 className="font-bold text-foreground text-lg truncate pr-4">{t('profileTitle')}</h2>
         <button
-          aria-label="Close details"
+          aria-label={t('closeLabel')}
           className="p-2 hover:bg-card/50 rounded-full transition-colors text-muted hover:text-foreground cursor-pointer"
           type="button"
           onClick={handleClose}
@@ -114,7 +105,7 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
               className="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold"
               onClick={handleClose}
             >
-              Close Panel
+              {t('closeButton')}
             </Button>
           </div>
         ) : null}
@@ -152,7 +143,7 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
             </div>
 
             <div className="space-y-1.5">
-              <span className="block text-xs font-bold uppercase tracking-wider text-muted">Synopsis Description</span>
+              <span className="block text-xs font-bold uppercase tracking-wider text-muted">{t('synopsis')}</span>
               <p className="text-foreground/90 text-sm leading-relaxed whitespace-pre-line text-left bg-card/30 p-4 rounded-2xl border border-border-custom backdrop-blur-xs transition-colors duration-300">
                 {book.description}
               </p>
@@ -160,12 +151,12 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
 
             <div className="grid grid-cols-2 gap-4 text-sm border-t border-border-custom pt-4 text-left transition-colors duration-300">
               <div>
-                <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">Primary Genre</span>
+                <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">{t('genre')}</span>
                 <span className="text-foreground font-semibold">{book.category}</span>
               </div>
               <div>
                 <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
-                  Setting Locations
+                  {t('locations')}
                 </span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {book.places && book.places.length > 0 ? (
@@ -178,29 +169,27 @@ export const BookDetails: React.FC<BookDetailsProps> = ({ id, initialData }) => 
                       </span>
                     ))
                   ) : (
-                    <span className="text-muted text-xs font-medium">Not Specified</span>
+                    <span className="text-muted text-xs font-medium">{t('notSpecified')}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Чекбокс выделения книги в глобальную корзину */}
             <div className="flex items-center justify-between p-4 rounded-xl border border-border-custom bg-card/30 backdrop-blur-xs transition-all duration-300">
               <div className="flex flex-col text-left">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">Status</span>
-                <span className="text-[11px] font-medium text-muted-foreground mt-0.5">Toggle selected state</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-muted">{t('status')}</span>
+                <span className="text-[11px] font-medium text-muted-foreground mt-0.5">{t('statusSub')}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold tracking-wider text-muted uppercase">Select</span>
+                <span className="text-[10px] font-bold tracking-wider text-muted uppercase">{t('selectLabel')}</span>
                 <BookSelectionCheckbox book={book} />
               </div>
             </div>
 
-            {/* Ссылка на официальный реестр Open Library */}
             {book.openLibraryUrl ? (
               <div className="border-t border-border-custom pt-4 text-left transition-colors duration-300">
                 <span className="block text-xs font-bold uppercase tracking-wider text-muted mb-1">
-                  Open Library Source Registry
+                  {t('registry')}
                 </span>
                 <a
                   className="text-primary underline text-xs break-all hover:text-primary/80 transition-colors"

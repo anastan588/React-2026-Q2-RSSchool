@@ -9,18 +9,13 @@
     "start": "next start",
     "lint": "eslint .",
     "format:fix": "prettier --write .",
-    "preview": "vite preview",
-    "prepare": "cd .. && husky books-api/.husky",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:ui": "vitest --ui",
-    "test:coverage": "vitest run --coverage"
+    "prepare": "cd .. && husky books-api/.husky"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.12.0",
     "@tailwindcss/postcss": "^4.3.1",
-    "@tailwindcss/vite": "^4.2.4",
     "next": "^16.2.9",
+    "next-intl": "^4.13.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-redux": "^9.3.0",

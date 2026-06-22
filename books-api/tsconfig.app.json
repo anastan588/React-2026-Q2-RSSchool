@@ -23,7 +23,7 @@
 
     /* Path & Next.js Options */
     "paths": {
-      "@/*": ["./src/*"] // Работает напрямую без baseUrl
+      "@/*": ["./src/*"]
     },
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,

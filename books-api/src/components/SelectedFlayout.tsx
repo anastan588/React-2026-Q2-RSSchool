@@ -1,7 +1,7 @@
-// components/SelectedFlayout.tsx
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useDispatch } from 'react-redux';
 
 import Button from '@/components/Button';
@@ -11,6 +11,7 @@ import { useAppSelector } from '@/state/store';
 export const SelectedBooksFlyout = () => {
   const dispatch = useDispatch();
   const downloadRef = useRef<HTMLAnchorElement>(null);
+  const t = useTranslations('Flyout');
 
   const selectedBooks = useAppSelector((state) => state.selected?.selectedBooks ?? []);
   const [csvData, setCsvData] = useState<{ url: string; fileName: string } | null>(null);
@@ -18,7 +19,6 @@ export const SelectedBooksFlyout = () => {
 
   const count = selectedBooks.length;
 
-  // Автоматический клик для скачивания при формировании ссылки бэкэнд-файла
   useEffect(() => {
     if (csvData && downloadRef.current) {
       downloadRef.current.click();
@@ -27,7 +27,6 @@ export const SelectedBooksFlyout = () => {
     }
   }, [csvData]);
 
-  // Чистка памяти при размонтировании флайаута
   useEffect(() => {
     return () => {
       if (csvData?.url) {
@@ -40,7 +39,6 @@ export const SelectedBooksFlyout = () => {
     dispatch(clearBooks());
   };
 
-  // FEATURE 8: Запрос компиляции и выгрузки файла со стороны сервера
   const handleDownload = async () => {
     if (count === 0 || isExporting) return;
 
@@ -58,7 +56,6 @@ export const SelectedBooksFlyout = () => {
         throw new Error('Failed to generate CSV on server');
       }
 
-      // Получаем готовый скомпилированный сервером файл
       const blob = await response.blob();
       const fileUrl = URL.createObjectURL(blob);
 
@@ -103,7 +100,7 @@ export const SelectedBooksFlyout = () => {
             {count}
           </div>
           <p className="text-xs font-bold text-muted transition-colors duration-300">
-            {count === 1 ? 'book selected' : 'books selected'}
+            {count === 1 ? t('oneSelected') : t('manySelected')}
           </p>
         </div>
 
@@ -116,7 +113,7 @@ export const SelectedBooksFlyout = () => {
             disabled={isExporting}
             onClick={handleDownload}
           >
-            {isExporting ? 'Exporting...' : 'Download'}
+            {isExporting ? t('exporting') : t('download')}
           </Button>
 
           <Button
@@ -126,7 +123,7 @@ export const SelectedBooksFlyout = () => {
             "
             onClick={handleUnselectAll}
           >
-            Unselect all
+            {t('unselectAll')}
           </Button>
         </div>
       </div>

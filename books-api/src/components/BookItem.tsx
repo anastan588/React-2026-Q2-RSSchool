@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import neutralBookImage from '@/assets/mock-book.jpg';
 import BookSelectionCheckbox from '@/components/BookSelect';
@@ -9,6 +10,7 @@ import type { BookItemProps } from '@/types/types';
 
 export const BookItem = ({ book }: BookItemProps) => {
   const [hasError, setHasError] = useState(false);
+  const t = useTranslations('App');
 
   const { id, title, author, category, cover } = book;
 
@@ -32,7 +34,6 @@ export const BookItem = ({ book }: BookItemProps) => {
           onError={handleError}
           fill
           priority={false}
-          // unoptimized={typeof displayCover === 'string'} // Раскомментируйте, если Next.js ругается на домен covers.openlibrary.org в next.config.js
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 25vw"
         />
         <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-white/20 pointer-events-none" />
@@ -44,23 +45,18 @@ export const BookItem = ({ book }: BookItemProps) => {
             {category}
           </span>
 
-          {/* 
-            ИСПРАВЛЕНО: Оборачиваем чекбокс в контейнер с остановкой всплытия события.
-            Это гарантирует, что когда пользователь кликает на чекбокс "Select", 
-            сработает ТОЛЬКО выбор книги, и страница НЕ БУДЕТ выполнять переход на панель деталей.
-          */}
           <div
             className="flex items-center gap-1.5"
             onClick={(e) => {
               e.preventDefault();
-              e.stopPropagation(); // Изолируем клик чекбокса от внешней ссылки Link
+              e.stopPropagation();
             }}
             onKeyDown={(e) => {
               e.stopPropagation();
             }}
           >
             <span className="text-[10px] font-bold tracking-wider text-muted uppercase group-hover:text-primary transition-colors duration-200">
-              Select
+              {t('select')}
             </span>
             <BookSelectionCheckbox book={book} />
           </div>

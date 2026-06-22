@@ -1,4 +1,5 @@
-// components/DetailsPanelShell.tsx
+import { getTranslations } from 'next-intl/server';
+
 import { BookDetails } from '@/pages/BookDetails';
 import type { ExtendedBook } from '@/types/types';
 
@@ -9,17 +10,14 @@ interface DetailsPanelShellProps {
 const BASE_URL = 'https://openlibrary.org';
 const COVERS_BASE_URL = 'https://covers.openlibrary.org/b';
 
-// Feature 10: Функция загрузки данных, которая выполняется ИСКЛЮЧИТЕЛЬНО НА СЕРВЕРЕ
-async function getBookDetailsOnServer(id: string): Promise<ExtendedBook | null> {
-  // Приводим ID к формату OpenLibrary (убираем лишние слеши, если есть)
+const getBookDetailsOnServer = async (id: string): Promise<ExtendedBook | null> => {
   const cleanedId = id.startsWith('/') ? id.substring(1) : `works/${id}`;
-
-  // Безопасно получаем TTL кэша из переменных окружения
   const cacheTtl = process.env.NEXT_PUBLIC_CACHE_TTL ? Number(process.env.NEXT_PUBLIC_CACHE_TTL) : 120;
+  const t = await getTranslations('Details');
 
   try {
     const res = await fetch(`${BASE_URL}/${cleanedId}.json`, {
-      next: { revalidate: cacheTtl }, // Встроенное кэширование Next.js на сервере
+      next: { revalidate: cacheTtl },
     });
 
     if (!res.ok) {
@@ -28,26 +26,23 @@ async function getBookDetailsOnServer(id: string): Promise<ExtendedBook | null> 
 
     const data = await res.json();
 
-    // Деструктуризация и трансформация описания произведения
-    let parsedDescription = 'No summary profile registered for this edition.';
+    let parsedDescription = t('fallbackDescription');
     if (typeof data.description === 'string') {
       parsedDescription = data.description;
     } else if (data.description && typeof data.description === 'object' && 'value' in data.description) {
       parsedDescription = data.description.value;
     }
 
-    // ИСПРАВЛЕНО: Извлекаем чистый ID без префикса /works/ для идеальной синхронизации с Redux
     const rawKey = data.key || id;
     const cleanId = rawKey.replace(/^\/?works\//, '').replace(/^\//, '');
 
     return {
-      id: cleanId, // Чистый ID гарантирует бесшовную работу клиентских чекбоксов
+      id: cleanId,
       title: data.title ?? 'Unknown Title',
       author: data.authors ? 'Details Loaded' : 'Unknown Author',
       category: data.subjects?.[0] ?? 'General',
       cover: data.covers?.[0] ? `${COVERS_BASE_URL}/id/${data.covers[0]}-M.jpg` : '',
-      // ИСПРАВЛЕНО: Безопасное формирование ссылки на официальный сайт
-      openLibraryUrl: `${BASE_URL}/works/${cleanId}`,
+      openLibraryUrl: `${BASE_URL}${data.key ?? id}`,
       description: parsedDescription,
       publishDate: data.first_publish_date ?? 'Unknown Date',
       places: data.subject_places?.slice(0, 4) || [],
@@ -56,10 +51,11 @@ async function getBookDetailsOnServer(id: string): Promise<ExtendedBook | null> 
     console.error('[Server Fetch Error] Failed to get book details:', err);
     return null;
   }
-}
+};
 
 export const DetailsPanelShell = async ({ selectedBookId }: DetailsPanelShellProps) => {
-  // Feature 9 (Критерий 9.2): Если ID книги не выбран, рендерится пустой шелл/заглушка
+  const t = await getTranslations('BookDetails');
+
   if (!selectedBookId) {
     return (
       <div className="h-full flex flex-col items-center justify-center text-muted text-sm py-20 text-center bg-card/10 backdrop-blur-md rounded-xl border border-border-custom">
@@ -71,17 +67,13 @@ export const DetailsPanelShell = async ({ selectedBookId }: DetailsPanelShellPro
             strokeWidth={1.5}
           />
         </svg>
-        <span className="font-medium tracking-wide">
-          Select a book from the results list to view its complete profile.
-        </span>
+        <span className="font-medium tracking-wide">{t('emptyMessage')}</span>
       </div>
     );
   }
 
-  // Feature 10 (Критерий 10.2): Запускаем загрузку данных на сервере при изменении selectedBookId [5]
   const initialData = await getBookDetailsOnServer(selectedBookId);
 
-  // Передаем полученные на сервере данные в ваш клиентский компонент BookDetails
   return <BookDetails key={selectedBookId} id={selectedBookId} initialData={initialData} />;
 };
 

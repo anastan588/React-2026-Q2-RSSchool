@@ -1,28 +1,28 @@
 'use client';
 
-import React, { useTransition } from 'react';
+import { useTransition } from 'react';
+import { useTranslations } from 'next-intl';
 
-// Импортируем созданный серверный экшен
 import { handleRefreshServerCacheAction } from '@/app/actions';
 import Button from '@/components/Button';
 import { booksApi } from '@/services/BooksService';
 import { useAppDispatch } from '@/state/store';
 import type { RefreshCacheButtonProps } from '@/types/types';
 
-// Расширяем пропсы: добавляем необязательный id книги для точечного сброса
 interface ImprovedRefreshProps extends Omit<RefreshCacheButtonProps, 'onRefresh'> {
   onRefresh?: () => void;
   id?: string;
 }
 
-export const RefreshCacheButton: React.FC<ImprovedRefreshProps> = ({
+export const RefreshCacheButton = ({
   onRefresh,
   isFetching: externalIsFetching,
   variant = 'main',
-  id, // Считываем ID книги
-}) => {
+  id,
+}: ImprovedRefreshProps) => {
   const dispatch = useAppDispatch();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('App');
 
   const handleRefresh = () => {
     if (onRefresh) {
@@ -30,17 +30,13 @@ export const RefreshCacheButton: React.FC<ImprovedRefreshProps> = ({
       return;
     }
 
-    // Запускаем единый процесс обновления для клиента и сервера
     startTransition(async () => {
       if (variant === 'details' && id) {
-        // 1а. Если мы в панели деталей, сбрасываем конкретную книгу в RTK Query
         dispatch(booksApi.util.invalidateTags([{ type: 'BookDetails', id }]));
       } else {
-        // 1б. Если мы на главной, сбрасываем весь список книг
         dispatch(booksApi.util.invalidateTags(['Books']));
       }
 
-      // 2. Вызываем серверный экшен для сброса кэша Next.js fetch()
       await handleRefreshServerCacheAction();
     });
   };
@@ -51,11 +47,11 @@ export const RefreshCacheButton: React.FC<ImprovedRefreshProps> = ({
   const label =
     variant === 'main'
       ? isLoading
-        ? 'Refreshing...'
-        : 'Refresh Books'
+        ? t('refreshing')
+        : t('refreshBooks')
       : isLoading
-        ? 'Refreshing...'
-        : 'Refresh book data';
+        ? t('refreshing')
+        : t('refreshBookData');
 
   return (
     <Button

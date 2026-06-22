@@ -1,22 +1,13 @@
-// app/actions.ts
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-
-/**
- * Вспомогательная функция для чистой сборки параметров URL.
- * Убирает дефолтные параметры (?page=1), разгружая адресную строку.
- */
 function buildUrl(query: string, page: string, bookId?: string | null): string {
   const params = new URLSearchParams();
 
-  // Сохраняем поисковый запрос, если он не дефолтный
   if (query && query !== 'A.A.') {
     params.set('q', query);
   }
-
-  // ОПТИМИЗАЦИЯ: Если страница первая, не пишем её в URL для сохранения чистоты адреса
   if (page && page !== '1') {
     params.set('page', page);
   }

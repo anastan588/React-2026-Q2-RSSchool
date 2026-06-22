@@ -1,10 +1,12 @@
+'use client';
+
 import React from 'react';
 
 import { addBook, removeBook } from '@/state/selectedSlice';
 import { useAppDispatch, useAppSelector } from '@/state/store';
 import type { BookSelectionCheckboxProps } from '@/types/types';
 
-export const BookSelectionCheckbox: React.FC<BookSelectionCheckboxProps> = ({ book }) => {
+export const BookSelectionCheckbox = ({ book }: BookSelectionCheckboxProps) => {
   const dispatch = useAppDispatch();
   const { id, title } = book;
 

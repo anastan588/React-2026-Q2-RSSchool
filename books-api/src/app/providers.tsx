@@ -1,4 +1,4 @@
-'use client'; // Обязательно для клиентских контекстов
+'use client';
 
 import { type ReactNode } from 'react';
 import { Provider } from 'react-redux';

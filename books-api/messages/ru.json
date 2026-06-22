@@ -1,0 +1,77 @@
+{
+  "Header": {
+    "about": "О приложении",
+    "back": "Назад в каталог",
+    "placeholder": "Поиск по автору (мин. 3 симв.)...",
+    "searchButton": "Поиск"
+  },
+  "Pagination": {
+    "previous": "Назад",
+    "next": "Вперед",
+    "loading": "Загрузка страницы...",
+    "info": "Страница {current} из {total}"
+  },
+  "App": {
+    "results": "Результаты ({count})",
+    "noBooks": "Книги не найдены. Попробуйте другой запрос!",
+    "refreshBooks": "Обновить книги",
+    "refreshing": "Обновление...",
+    "refreshBookData": "Обновить данные книги",
+    "select": "Выбрать",
+    "throwError": "Вызвать ошибку"
+  },
+  "NotFound": {
+    "title": "404",
+    "subtitle": "Страница не найдена",
+    "description": "Страница, которую вы ищете, не существует или была перемещена.",
+    "goBack": "Назад",
+    "returnHome": "На главную"
+  },
+  "BookDetails": {
+    "profileTitle": "Профиль книги",
+    "synopsis": "Краткое описание",
+    "genre": "Основной жанр",
+    "locations": "Места действия",
+    "notSpecified": "Не указано",
+    "status": "Статус",
+    "statusSub": "Переключить состояние выбора",
+    "selectLabel": "Выбрать",
+    "registry": "Официальный реестр Open Library",
+    "closeLabel": "Закрыть"
+  },
+  "ErrorBoundary": {
+    "title": "Что-то пошло не так",
+    "description": "Приложение столкнулось с непредвиденной ошибкой.",
+    "button": "Попробовать снова"
+  },
+  "ErrorMessage": {
+    "alert": "Сигнал ошибки",
+    "retry": "Повторить поиск"
+  },
+  "Loader": {
+    "searching": "Поиск \"{query}\"...",
+    "loading": "Загрузка каталога книг..."
+  },
+  "Flyout": {
+    "oneSelected": "книга выбрана",
+    "manySelected": "книг выбрано",
+    "download": "Скачать",
+    "exporting": "Экспорт...",
+    "unselectAll": "Отменить все"
+  },
+  "Theme": {
+    "dark": "Темная тема",
+    "light": "Светлая тема",
+    "aria": "Переключить на {nextTheme} тему"
+  },
+  "About": {
+    "title": "О каталоге книг",
+    "authorHeading": "Информация об авторе",
+    "developerLabel": "Разработчик:",
+    "appDescription": "Это приложение для поиска книг взаимодействует с Open Library API.",
+    "educationHeading": "Образовательная платформа",
+    "courseDescription": "Разработано в рамках проекта RS School React Course.",
+    "courseLink": "Официальный сайт RS School React Course",
+    "backButton": "Назад на главную"
+  }
+}
