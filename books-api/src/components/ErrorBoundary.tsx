@@ -1,40 +1,79 @@
+'use client';
+
 import { Component, type ErrorInfo } from 'react';
+import { useTranslations } from 'next-intl';
 
 import Button from '@/components/Button';
 import type { BoundaryProps, BoundaryState } from '@/types/types';
 
-class ErrorBoundary extends Component<BoundaryProps, BoundaryState> {
-  state: BoundaryState = {
+interface ImprovedBoundaryState extends BoundaryState {
+  error?: Error | null;
+}
+
+interface ErrorViewProps {
+  error: Error | null | undefined;
+  onReset: () => void;
+}
+
+const ErrorView = ({ error, onReset }: ErrorViewProps) => {
+  const t = useTranslations('ErrorBoundary');
+
+  return (
+    <div className="flex flex-col items-center justify-center p-12 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30 rounded-3xl m-4 text-center animate-in fade-in zoom-in-95 duration-250">
+      <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 text-xl font-bold mb-4">
+        ⚠️
+      </div>
+
+      <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{t('title')}</h2>
+
+      <p className="text-red-500 dark:text-red-400/80 mb-4 max-w-md text-sm">{t('description')}</p>
+
+      {error ? (
+        <div className="w-full max-w-md p-3 mb-6 bg-red-100/50 dark:bg-red-950/40 border border-red-200/40 rounded-xl text-left font-mono text-xs text-red-700 dark:text-red-300 break-words overflow-x-auto">
+          <strong>Error:</strong> {error.message || String(error)}
+        </div>
+      ) : null}
+
+      <Button
+        className="bg-red-600 hover:bg-red-700 text-white border-none shadow-lg shadow-red-600/20 px-6 py-2.5 font-semibold text-sm active:scale-98 transition-all"
+        onClick={onReset}
+      >
+        {t('button')}
+      </Button>
+    </div>
+  );
+};
+
+class ErrorBoundary extends Component<BoundaryProps, ImprovedBoundaryState> {
+  state: ImprovedBoundaryState = {
     hasError: false,
+    error: null,
   };
 
-  static getDerivedStateFromError(): BoundaryState {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): ImprovedBoundaryState {
+    if (error.message === 'NEXT_REDIRECT' || error.message?.includes('NEXT_REDIRECT')) {
+      return { hasError: false, error: null };
+    }
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    if (error.message === 'NEXT_REDIRECT' || error.message?.includes('NEXT_REDIRECT')) {
+      return;
+    }
     console.error('ErrorBoundary caught an error:', error, errorInfo);
   }
 
   handleReset = (): void => {
-    this.setState({ hasError: false });
-    window.location.reload();
+    this.setState({ hasError: false, error: null });
   };
 
   render() {
     const { children } = this.props;
-    const { hasError } = this.state;
+    const { hasError, error } = this.state;
 
-    if (hasError) {
-      return (
-        <div className="flex flex-col items-center justify-center p-12 bg-red-50 border border-red-100 rounded-3xl m-4 text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-          <p className="text-red-500 mb-8 max-w-md">
-            The application encountered a critical error. Please try reloading the page.
-          </p>
-          <Button onClick={this.handleReset}>Reload App</Button>
-        </div>
-      );
+    if (hasError && error?.message !== 'NEXT_REDIRECT' && !error?.message?.includes('NEXT_REDIRECT')) {
+      return <ErrorView error={error} onReset={this.handleReset} />;
     }
 
     return children;

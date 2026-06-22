@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import type { StorageState } from '@/types/types';
 
@@ -10,6 +10,9 @@ const DEFAULT_STATE: StorageState = {
 
 export const useSearchStorage = () => {
   const [storageState, setStorageState] = useState<StorageState>(() => {
+    // Безопасная проверка для сервера (SSR)
+    if (typeof window === 'undefined') return DEFAULT_STATE;
+
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? (JSON.parse(saved) as StorageState) : DEFAULT_STATE;
@@ -19,33 +22,46 @@ export const useSearchStorage = () => {
     }
   });
 
-  const saveState = (updatedState: StorageState) => {
+  // Обновляем состояние и localStorage атомарно
+  const saveState = useCallback((updatedState: StorageState) => {
     setStorageState(updatedState);
+    if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
     } catch (error) {
       console.error('Error saving state to localStorage', error);
     }
-  };
+  }, []);
 
-  const setSearchQuery = (query: string): void => {
-    const trimmedQuery = query.trim();
-    saveState({
-      query: trimmedQuery,
-      page: 1,
+  const setSearchQuery = useCallback(
+    (query: string): void => {
+      const trimmedQuery = query.trim();
+      saveState({
+        query: trimmedQuery,
+        page: 1,
+      });
+    },
+    [saveState],
+  );
+
+  const setStoragePage = useCallback((page: number): void => {
+    // Ипользуем функциональный апдейт, чтобы всегда иметь свежий стейт
+    setStorageState((prev) => {
+      const nextState = { ...prev, page };
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+        } catch (error) {
+          console.error('Error saving state to localStorage', error);
+        }
+      }
+      return nextState;
     });
-  };
+  }, []);
 
-  const setStoragePage = (page: number): void => {
-    saveState({
-      ...storageState,
-      page,
-    });
-  };
-
-  const clearSearch = (): void => {
+  const clearSearch = useCallback(() => {
     saveState(DEFAULT_STATE);
-  };
+  }, [saveState]);
 
   return {
     searchQuery: storageState.query,

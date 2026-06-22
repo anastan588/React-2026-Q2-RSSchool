@@ -1,19 +1,21 @@
+'use client';
+
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useDispatch } from 'react-redux';
 
 import Button from '@/components/Button';
-import { prepareCsvDownload } from '@/services/CsvDownloadService';
 import { clearBooks } from '@/state/selectedSlice';
 import { useAppSelector } from '@/state/store';
 
 export const SelectedBooksFlyout = () => {
   const dispatch = useDispatch();
-
   const downloadRef = useRef<HTMLAnchorElement>(null);
+  const t = useTranslations('Flyout');
 
-  const selectedBooks = useAppSelector((state) => state.selected?.selectedBooks ?? state.selected?.selectedBooks ?? []);
-
+  const selectedBooks = useAppSelector((state) => state.selected?.selectedBooks ?? []);
   const [csvData, setCsvData] = useState<{ url: string; fileName: string } | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const count = selectedBooks.length;
 
@@ -25,14 +27,46 @@ export const SelectedBooksFlyout = () => {
     }
   }, [csvData]);
 
+  useEffect(() => {
+    return () => {
+      if (csvData?.url) {
+        URL.revokeObjectURL(csvData.url);
+      }
+    };
+  }, [csvData]);
+
   const handleUnselectAll = () => {
     dispatch(clearBooks());
   };
 
-  const handleDownload = () => {
-    const data = prepareCsvDownload(selectedBooks);
-    if (data) {
-      setCsvData(data);
+  const handleDownload = async () => {
+    if (count === 0 || isExporting) return;
+
+    setIsExporting(true);
+    try {
+      const response = await fetch('/api/export-csv', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedBooks),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate CSV on server');
+      }
+
+      const blob = await response.blob();
+      const fileUrl = URL.createObjectURL(blob);
+
+      setCsvData({
+        url: fileUrl,
+        fileName: `${count}_items.csv`,
+      });
+    } catch (error) {
+      console.error('[CSV Client Handler Error]:', error);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -53,6 +87,7 @@ export const SelectedBooksFlyout = () => {
         className="hidden"
         download={csvData?.fileName || ''}
         href={csvData?.url || '#'}
+        tabIndex={-1}
       />
       <div className="flex flex-col items-center text-center gap-3">
         <div className="flex flex-col items-center gap-1.5">
@@ -65,7 +100,7 @@ export const SelectedBooksFlyout = () => {
             {count}
           </div>
           <p className="text-xs font-bold text-muted transition-colors duration-300">
-            {count === 1 ? 'book selected' : 'books selected'}
+            {count === 1 ? t('oneSelected') : t('manySelected')}
           </p>
         </div>
 
@@ -73,11 +108,12 @@ export const SelectedBooksFlyout = () => {
           <Button
             className="
               w-full flex items-center justify-center font-bold text-xs py-2 rounded-lg border transition-all active:scale-98 cursor-pointer shadow-xs hover:shadow-md
-              bg-primary text-white border-primary/20 hover:brightness-110
+              bg-primary text-white border-primary/20 hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed
             "
+            disabled={isExporting}
             onClick={handleDownload}
           >
-            Download
+            {isExporting ? t('exporting') : t('download')}
           </Button>
 
           <Button
@@ -87,7 +123,7 @@ export const SelectedBooksFlyout = () => {
             "
             onClick={handleUnselectAll}
           >
-            Unselect all
+            {t('unselectAll')}
           </Button>
         </div>
       </div>

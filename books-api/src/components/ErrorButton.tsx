@@ -1,20 +1,29 @@
+'use client';
+
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import Button from '@/components/Button';
 
 export const ErrorButton = () => {
-  const [shouldCrash, setShouldCrash] = useState<boolean>(false);
+  const t = useTranslations('App');
+  const [, setCrashState] = useState<boolean>(false);
 
-  if (shouldCrash) {
-    throw new Error('Test Error: Application crashed as requested.');
-  }
+  const handleCrash = () => {
+    setTimeout(() => {
+      setCrashState(() => {
+        throw new Error('Test Error: Application crashed as requested.');
+      });
+    }, 0);
+  };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <Button className="bg-red-500! shadow-red-500/20! text-xs py-2 px-4" onClick={() => setShouldCrash(true)}>
-        Throw error
-      </Button>
-    </div>
+    <Button
+      className="bg-red-500! shadow-red-500/20! text-xs py-2 px-4 rounded-lg font-semibold text-white hover:brightness-110 active:scale-98 transition-all"
+      onClick={handleCrash}
+    >
+      {t('throwError')}
+    </Button>
   );
 };
 

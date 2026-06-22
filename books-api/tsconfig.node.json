@@ -4,7 +4,6 @@
     "target": "es2023",
     "lib": ["ES2023"],
     "module": "esnext",
-    "types": ["node"],
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -20,7 +19,12 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
-    "types": ["vitest/globals"]
+    /* Node.js Specific */
+    "types": ["node", "vitest/globals"],
+    "esModuleInterop": true,
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "next.config.mjs", "./dist/types/**/*.ts", "./next-env.d.ts"],
+  "exclude": ["./node_modules"]
 }

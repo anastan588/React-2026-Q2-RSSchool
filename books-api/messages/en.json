@@ -1,0 +1,80 @@
+{
+  "Header": {
+    "about": "About the App",
+    "back": "Back to Catalogue",
+    "placeholder": "Search by author (min 3 chars)...",
+    "searchButton": "Search"
+  },
+  "Pagination": {
+    "previous": "Previous",
+    "next": "Next",
+    "loading": "Loading page...",
+    "info": "Page {current} of {total}"
+  },
+  "App": {
+    "results": "Results ({count})",
+    "noBooks": "No books found. Try a different search!",
+    "refreshBooks": "Refresh Books",
+    "refreshing": "Refreshing...",
+    "refreshBookData": "Refresh book data",
+    "select": "Select",
+    "throwError": "Throw error"
+  },
+  "NotFound": {
+    "title": "404",
+    "subtitle": "Page Not Found",
+    "description": "The page you are looking for does not exist or has been moved.",
+    "goBack": "Go Back",
+    "returnHome": "Return to Main App"
+  },
+  "BookDetails": {
+    "profileTitle": "Book Profile",
+    "synopsis": "Synopsis Description",
+    "genre": "Primary Genre",
+    "locations": "Setting Locations",
+    "notSpecified": "Not Specified",
+    "status": "Status",
+    "statusSub": "Toggle selected state",
+    "selectLabel": "Select",
+    "registry": "Open Library Source Registry",
+    "closeLabel": "CLose"
+  },
+  "ErrorBoundary": {
+    "title": "Something went wrong",
+    "description": "The application encountered an unexpected error.",
+    "button": "Try Again"
+  },
+  "ErrorMessage": {
+    "alert": "Error Alert",
+    "retry": "Retry Search"
+  },
+  "Loader": {
+    "searching": "Searching for \"{query}\"...",
+    "loading": "Loading books catalogue..."
+  },
+  "Flyout": {
+    "oneSelected": "book selected",
+    "manySelected": "books selected",
+    "download": "Download",
+    "exporting": "Exporting...",
+    "unselectAll": "Unselect all"
+  },
+  "Theme": {
+    "dark": "Dark theme",
+    "light": "Light theme",
+    "aria": "Switch to {nextTheme} theme"
+  },
+  "About": {
+    "title": "About Books Catalogue",
+    "authorHeading": "Author Information",
+    "developerLabel": "Developer:",
+    "appDescription": "This book searching app interacts with the Open Library API.",
+    "educationHeading": "Education Platform",
+    "courseDescription": "Developed as a project of RS School React Course.",
+    "courseLink": "RS School React Course Official Site",
+    "backButton": "Back to main page"
+  },
+  "Details": {
+    "fallbackDescription": "No description available for this book."
+  }
+}
