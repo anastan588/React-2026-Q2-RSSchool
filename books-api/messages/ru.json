@@ -73,5 +73,8 @@
     "courseDescription": "Разработано в рамках проекта RS School React Course.",
     "courseLink": "Официальный сайт RS School React Course",
     "backButton": "Назад на главную"
+  },
+  "Details": {
+    "fallbackDescription": "Описание для данной книги отсутствует."
   }
 }
